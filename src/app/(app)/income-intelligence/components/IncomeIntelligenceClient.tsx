@@ -46,11 +46,14 @@ export function IncomeIntelligenceClient() {
 
   const requestMicPermission = async () => {
     try {
+      // Just requesting the stream is enough to get permission.
+      // We don't need to do anything with the stream here, 
+      // it will be requested again in handleStartRecording.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setHasMicPermission(true);
-       // Immediately stop the stream; we only wanted to check permission.
-       // We will request it again when the user actually starts recording.
+      // Stop the tracks immediately to free up the microphone
+      // for when the actual recording starts.
       stream.getTracks().forEach(track => track.stop());
+      setHasMicPermission(true);
       return true;
     } catch (error) {
       console.error("Error accessing microphone:", error);
@@ -66,17 +69,19 @@ export function IncomeIntelligenceClient() {
 
 
   const handleStartRecording = async () => {
-     if (hasMicPermission === null) {
-      const permissionGranted = await requestMicPermission();
-      if (!permissionGranted) return;
+    let permissionGranted = hasMicPermission;
+    if (permissionGranted === null) {
+      permissionGranted = await requestMicPermission();
     }
     
-    if (hasMicPermission === false) {
-       toast({
-        variant: "destructive",
-        title: "Microphone Access Denied",
-        description: "Please enable microphone permissions in your browser settings to use the recording feature."
-      });
+    if (!permissionGranted) {
+       if(hasMicPermission === false) { // Only show toast if permission was explicitly denied
+         toast({
+           variant: "destructive",
+           title: "Microphone Access Denied",
+           description: "Please enable microphone permissions in your browser settings."
+         });
+       }
       return;
     }
 
