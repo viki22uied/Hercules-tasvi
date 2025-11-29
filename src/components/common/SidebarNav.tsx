@@ -90,7 +90,7 @@ export function SidebarNav() {
               >
                 <Link href={item.href}>
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span className='whitespace-normal'>{item.label}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -28,7 +28,7 @@ const pageTitles: { [key: string]: string } = {
 };
 
 const translations: Record<string, Record<string, string>> = {
-    Dashboard: { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
+    'Dashboard': { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
     'Income Intelligence': { hi: 'आय बुद्धिमत्ता', mr: 'उत्पन्न बुद्धिमत्ता' },
     'Family Finance': { hi: 'पारिवारिक वित्त', mr: 'कौटुंबिक वित्त' },
     'Crisis Plan': { hi: 'संकट योजना', mr: 'संकट योजना' },
@@ -41,9 +41,11 @@ const translations: Record<string, Record<string, string>> = {
     'Hercules Finance AI': { hi: 'हरक्यूलिस फायनान्स एआय', mr: 'हरक्यूलिस फायनान्स एआय' },
     'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
     'Support': { hi: 'समर्थन', mr: 'समर्थन' },
+    'Hercules AI': { hi: 'हरक्यूलिस एआय', mr: 'हरक्यूलिस एआय'},
   };
 
 const translateTitle = (key: string, lang: string) => {
+  if (lang === 'en' || !key) return key;
   return translations[key]?.[lang] || key;
 };
 
@@ -61,18 +63,18 @@ const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) =
       });
 };
 
-const debouncedTranslate = debounce(translateText, 300);
+const debouncedTranslate = debounce(translateText, 500);
 
 const translateElements = async (targetLang: string) => {
+    document.querySelectorAll('[data-original-text]').forEach(el => {
+        const originalText = (el as HTMLElement).dataset.originalText;
+        if (originalText) {
+            el.textContent = originalText;
+            (el as HTMLElement).removeAttribute('data-original-text');
+        }
+    });
+
     if (targetLang === 'en') {
-        // Restore original text
-        document.querySelectorAll('[data-original-text]').forEach(el => {
-            const originalText = (el as HTMLElement).dataset.originalText;
-            if (originalText) {
-                el.textContent = originalText;
-                (el as HTMLElement).removeAttribute('data-original-text');
-            }
-        });
         return;
     }
 
@@ -80,34 +82,36 @@ const translateElements = async (targetLang: string) => {
     const translatableElements: HTMLElement[] = [];
 
     elements.forEach(el => {
-        const hasNoTranslatableChildren = ![...el.children].some(child => child.tagName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
+        const htmlEl = el as HTMLElement;
+        const hasNoTranslatableChildren = ![...el.children].some(child => child.nodeName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
         const isNotEmpty = el.textContent?.trim();
-        const isNotSrOnly = !(el as HTMLElement).classList.contains('sr-only');
-        const isNotTranslated = !(el as HTMLElement).dataset.originalText;
+        const isNotSrOnly = !htmlEl.classList.contains('sr-only');
 
-        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && isNotTranslated) {
-            translatableElements.push(el as HTMLElement);
+        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && !htmlEl.dataset.originalText) {
+            translatableElements.push(htmlEl);
         }
     });
 
     for (const el of translatableElements) {
         const originalText = el.textContent || '';
-        if (originalText.trim().length > 1 && !originalText.startsWith('₹') && !translations[originalText]) { // Basic check to avoid translating just symbols or already translated text
-             if((el as HTMLElement).dataset.originalText) continue; // Already processed
-            (el as HTMLElement).dataset.originalText = originalText;
+        if (originalText.trim().length > 1 && !originalText.startsWith('₹')) {
+            if(!el.dataset.originalText) el.dataset.originalText = originalText;
             try {
-                const { translation } = await debouncedTranslate({ text: originalText, targetLang });
-                if ((el as HTMLElement).dataset.originalText === originalText) { // Check if element text hasn't been changed by React re-render
-                    el.textContent = translation;
+                const staticTranslation = translations[originalText]?.[targetLang];
+                if (staticTranslation) {
+                     if (el.dataset.originalText === originalText) {
+                        el.textContent = staticTranslation;
+                     }
+                } else {
+                    const { translation } = await debouncedTranslate({ text: originalText, targetLang });
+                    if (el.dataset.originalText === originalText) {
+                        el.textContent = translation;
+                    }
                 }
             } catch (e) {
                 console.error("Translation failed for:", originalText, e);
-                el.textContent = originalText; // Revert on failure
+                if(el.dataset.originalText) el.textContent = el.dataset.originalText;
             }
-        } else if (translations[originalText] && translations[originalText][targetLang]) {
-            if((el as HTMLElement).dataset.originalText) continue;
-            (el as HTMLElement).dataset.originalText = originalText;
-            el.textContent = translations[originalText][targetLang];
         }
     }
 };
@@ -119,7 +123,8 @@ export function Header() {
   const [isPending, startTransition] = useTransition();
 
   const getInitialLang = useCallback(() => {
-    return searchParams.get('lang') || 'en';
+    const lang = searchParams.get('lang');
+    return lang && ['en', 'hi', 'mr'].includes(lang) ? lang : 'en';
   }, [searchParams]);
 
   const [language, setLanguage] = useState(getInitialLang);
@@ -127,21 +132,22 @@ export function Header() {
   useEffect(() => {
     const lang = getInitialLang();
     setLanguage(lang);
-    if (document.readyState === 'complete') {
-        translateElements(lang);
-    } else {
-        const handleLoad = () => {
-            translateElements(lang)
-            window.removeEventListener('load', handleLoad)
-        };
-        window.addEventListener('load', handleLoad);
-    }
+    // Use a timeout to ensure the DOM is fully rendered before translating
+    const timer = setTimeout(() => {
+         translateElements(lang);
+    }, 100);
+    return () => clearTimeout(timer);
   }, [pathname, searchParams, getInitialLang]);
-
+  
   const onSelectLanguage = (lang: string) => {
+    if (language === lang) return;
     setLanguage(lang);
     const params = new URLSearchParams(window.location.search);
-    params.set('lang', lang);
+    if (lang === 'en') {
+        params.delete('lang');
+    } else {
+        params.set('lang', lang);
+    }
     const newUrl = `${pathname}?${params.toString()}`;
     
     startTransition(() => {
