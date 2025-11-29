@@ -15,7 +15,6 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Globe } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useState, useTransition, useEffect, useCallback } from 'react';
-import { translateText } from '@/ai/flows/translate-flow';
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
@@ -51,89 +50,6 @@ const translateTitle = (key: string, lang: string) => {
   return translations[key]?.[lang] || key;
 };
 
-// Debounce function
-const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
-    let timeout: NodeJS.Timeout;
-
-    return (...args: Parameters<F>): Promise<ReturnType<F>> =>
-      new Promise(resolve => {
-        if (timeout) {
-          clearTimeout(timeout);
-        }
-
-        timeout = setTimeout(() => resolve(func(...args)), waitFor);
-      });
-};
-
-const debouncedTranslate = debounce(translateText, 300);
-
-const translateElements = async (targetLang: string) => {
-    document.querySelectorAll('[data-original-text]').forEach(el => {
-        const originalText = (el as HTMLElement).dataset.originalText;
-        if (originalText) {
-            el.textContent = originalText;
-        }
-        (el as HTMLElement).removeAttribute('data-original-text');
-        (el as HTMLElement).removeAttribute('data-translated');
-    });
-
-    if (targetLang === 'en') return;
-
-    const elements = document.querySelectorAll('p, h1, h2, h3, h4, span, div, label, button, a, [data-translate]');
-    const translatableElements: HTMLElement[] = [];
-
-    const isTranslated = (lang: string, text: string) => {
-        for (const key in translations) {
-            const langValues = Object.values(translations[key]);
-            if (langValues.includes(text)) return true;
-        }
-        return false;
-    };
-    
-    elements.forEach(el => {
-        const htmlEl = el as HTMLElement;
-        const hasNoTranslatableChildren = ![...el.children].some(child => child.nodeName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
-        const isNotEmpty = htmlEl.textContent?.trim();
-        const isNotSrOnly = !htmlEl.classList.contains('sr-only');
-        const isNotTranslated = !htmlEl.hasAttribute('data-translated');
-
-        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && isNotTranslated) {
-            if (!isTranslated(targetLang, htmlEl.textContent!.trim())) {
-                 translatableElements.push(htmlEl);
-            }
-        }
-    });
-
-    for (const el of translatableElements) {
-        const originalText = el.textContent || '';
-        if (originalText.trim().length > 1 && !originalText.startsWith('₹')) {
-            if (el.hasAttribute('data-original-text')) continue;
-
-            el.dataset.originalText = originalText;
-            try {
-                const staticTranslation = translations[originalText.trim()]?.[targetLang];
-                if (staticTranslation) {
-                     if (el.dataset.originalText === originalText) {
-                        el.textContent = staticTranslation;
-                        el.dataset.translated = "true";
-                     }
-                } else {
-                    const { translation } = await debouncedTranslate({ text: originalText, targetLang });
-                    if (el.dataset.originalText === originalText) { // Check again in case of race condition
-                        el.textContent = translation;
-                        el.dataset.translated = "true";
-                    }
-                }
-            } catch (e) {
-                console.error("Translation failed for:", originalText, e);
-                 if (el.dataset.originalText) {
-                    el.textContent = el.dataset.originalText; // Revert on failure
-                 }
-            }
-        }
-    }
-};
-
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
@@ -142,9 +58,9 @@ export function Header() {
 
   const getInitialLang = useCallback(() => {
     if (typeof window === 'undefined') return 'en';
-    const lang = new URLSearchParams(window.location.search).get('lang');
+    const lang = searchParams.get('lang');
     return lang && ['en', 'hi', 'mr'].includes(lang) ? lang : 'en';
-  }, []);
+  }, [searchParams]);
 
   const [language, setLanguage] = useState(getInitialLang);
   const [hydrated, setHydrated] = useState(false);
@@ -152,21 +68,16 @@ export function Header() {
   useEffect(() => {
     setHydrated(true);
   }, []);
-
+  
   useEffect(() => {
     const lang = getInitialLang();
     setLanguage(lang);
-    const timer = setTimeout(() => {
-         translateElements(lang);
-    }, 150);
-    return () => clearTimeout(timer);
   }, [pathname, searchParams, getInitialLang]);
   
   const onSelectLanguage = (lang: string) => {
     if (language === lang) return;
     
     startTransition(() => {
-      setLanguage(lang);
       const params = new URLSearchParams(window.location.search);
       if (lang === 'en') {
           params.delete('lang');
@@ -214,12 +125,12 @@ export function Header() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel>{translateTitle('My Account', language)}</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Settings</DropdownMenuItem>
-            <DropdownMenuItem>Support</DropdownMenuItem>
+            <DropdownMenuItem>{translateTitle('Settings', language)}</DropdownMenuItem>
+            <DropdownMenuItem>{translateTitle('Support', language)}</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>Logout</DropdownMenuItem>
+            <DropdownMenuItem>{translateTitle('Logout', language)}</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import {
   Sidebar,
   SidebarHeader,
@@ -22,6 +22,7 @@ import {
   Settings,
   HelpCircle,
 } from 'lucide-react';
+import { useCallback } from 'react';
 
 const menuItems = [
   {
@@ -68,15 +69,46 @@ const menuItems = [
   },
 ];
 
+const translations: Record<string, Record<string, string>> = {
+    'Dashboard': { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
+    'Income Intelligence': { hi: 'आय बुद्धिमत्ता', mr: 'उत्पन्न बुद्धिमत्ता' },
+    'Family Finance': { hi: 'पारिवारिक वित्त', mr: 'कौटुंबिक वित्त' },
+    'Crisis Plan': { hi: 'संकट योजना', mr: 'संकट योजना' },
+    'Cultural Investment': { hi: 'सांस्कृतिक गुंतवणूक', mr: 'सांस्कृतिक गुंतवणूक' },
+    'Stress Sensing': { hi: 'तणाव सेन्सिंग', mr: 'तणाव सेन्सिंग' },
+    'Scam Simulation': { hi: 'घोटाळा सिम्युलेशन', mr: 'घोटाळा सिम्युलेशन' },
+    'Hercules AI': { hi: 'हरक्यूलिस एआय', mr: 'हरक्यूलिस एआय'},
+    'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
+    'Support': { hi: 'समर्थन', mr: 'समर्थन' },
+};
+
+const translate = (key: string, lang: string) => {
+  if (lang === 'en' || !key) return key;
+  return translations[key]?.[lang] || key;
+};
+
 export function SidebarNav() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const getLang = useCallback(() => {
+    const lang = searchParams.get('lang');
+    return lang && ['en', 'hi', 'mr'].includes(lang) ? lang : 'en';
+  }, [searchParams]);
+
+  const lang = getLang();
+
+  const getHref = (href: string) => {
+      if (lang === 'en') return href;
+      return `${href}?lang=${lang}`;
+  }
 
   return (
     <Sidebar variant="sidebar" collapsible="icon">
       <SidebarHeader className="border-b">
         <div className="flex items-center gap-2 p-2">
           <AppLogo className="size-8 text-primary" />
-          <span className="text-lg font-bold">Hercules AI</span>
+          <span className="text-lg font-bold">{translate('Hercules AI', lang)}</span>
         </div>
       </SidebarHeader>
       <SidebarContent className="flex-1">
@@ -86,11 +118,11 @@ export function SidebarNav() {
               <SidebarMenuButton
                 asChild
                 isActive={pathname === item.href}
-                tooltip={{ children: item.tooltip, side: 'right' }}
+                tooltip={{ children: translate(item.tooltip, lang), side: 'right' }}
               >
-                <Link href={item.href}>
+                <Link href={getHref(item.href)}>
                   <item.icon />
-                  <span>{item.label}</span>
+                  <span>{translate(item.label, lang)}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -102,22 +134,22 @@ export function SidebarNav() {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip={{ children: 'Settings', side: 'right' }}
+              tooltip={{ children: translate('Settings', lang), side: 'right' }}
             >
               <Link href="#">
                 <Settings />
-                <span>Settings</span>
+                <span>{translate('Settings', lang)}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              tooltip={{ children: 'Support', side: 'right' }}
+              tooltip={{ children: translate('Support', lang), side: 'right' }}
             >
               <Link href="#">
                 <HelpCircle />
-                <span>Support</span>
+                <span>{translate('Support', lang)}</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
