@@ -46,17 +46,12 @@ export function IncomeIntelligenceClient() {
 
   const requestMicPermission = async () => {
     try {
-      // Just requesting the stream is enough to get permission.
-      // We don't need to do anything with the stream here, 
-      // it will be requested again in handleStartRecording.
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      // Stop the tracks immediately to free up the microphone
-      // for when the actual recording starts.
       stream.getTracks().forEach(track => track.stop());
       setHasMicPermission(true);
       return true;
     } catch (error) {
-      console.error("Error accessing microphone:", error);
+      console.error("Error requesting microphone permission:", error);
       setHasMicPermission(false);
       toast({
         variant: "destructive",
@@ -69,60 +64,51 @@ export function IncomeIntelligenceClient() {
 
 
   const handleStartRecording = async () => {
-    let permissionGranted = hasMicPermission;
-    if (permissionGranted === null) {
-      permissionGranted = await requestMicPermission();
-    }
-    
-    if (!permissionGranted) {
-       if(hasMicPermission === false) { // Only show toast if permission was explicitly denied
-         toast({
-           variant: "destructive",
-           title: "Microphone Access Denied",
-           description: "Please enable microphone permissions in your browser settings."
-         });
-       }
-      return;
-    }
-
+    if (isRecording) return;
+  
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setHasMicPermission(true);
+  
       mediaRecorderRef.current = new MediaRecorder(stream);
-      mediaRecorderRef.current.start();
-
+      audioChunksRef.current = []; // Clear previous chunks
+  
       mediaRecorderRef.current.ondataavailable = (event) => {
-        audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
-
-      mediaRecorderRef.current.onstop = async () => {
+  
+      mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        // In a real app, you would send this to a speech-to-text API.
-        // For this demo, we'll alert the user that recording has stopped.
         toast({
           title: 'Recording Stopped',
           description: 'Audio captured. In a real app, this would be transcribed.',
         });
-        
-        // This is a placeholder for where the transcription would be set.
-        // For now, we will clear the chunks.
+        // In a real app, you would send this to a speech-to-text API.
+        // For now, we will just clear the chunks.
         audioChunksRef.current = [];
-         // Stop the media stream tracks
-        stream.getTracks().forEach(track => track.stop());
+        
+        // Stop all tracks on the stream associated with this recorder
+        mediaRecorderRef.current?.stream.getTracks().forEach(track => track.stop());
+        setIsRecording(false);
       };
-
+  
+      mediaRecorderRef.current.start();
       setIsRecording(true);
       toast({
         title: 'Recording Started',
         description: 'Speak now to describe your financial situation.',
       });
-
+  
     } catch (error) {
       console.error("Error starting recording:", error);
-      setIsRecording(false); // Ensure state is correct on error
+      setHasMicPermission(false);
+      setIsRecording(false);
       toast({
         variant: "destructive",
-        title: "Recording Error",
-        description: "Could not start recording. Please try again."
+        title: "Could not start recording",
+        description: "Please ensure microphone permissions are allowed and try again."
       })
     }
   };
@@ -130,12 +116,12 @@ export function IncomeIntelligenceClient() {
   const handleStopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
       mediaRecorderRef.current.stop();
-      setIsRecording(false);
+      // onstop handler will set isRecording to false
     }
   };
   
   useEffect(() => {
-    // Check for mic permission on component mount without prompting the user.
+    // Check initial permission status without prompting
     navigator.permissions?.query({ name: 'microphone' as PermissionName }).then((permissionStatus) => {
       setHasMicPermission(permissionStatus.state === 'granted');
       permissionStatus.onchange = () => {
@@ -143,19 +129,13 @@ export function IncomeIntelligenceClient() {
       };
     });
 
-    // Cleanup function to stop recording and stream if component unmounts
     return () => {
-      if (mediaRecorderRef.current) {
-        const stream = mediaRecorderRef.current.stream;
-        if (stream) {
-          stream.getTracks().forEach(track => track.stop());
-        }
-        if (isRecording) {
-          mediaRecorderRef.current.stop();
-        }
+      // Cleanup: stop stream tracks if the component unmounts while recording
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isRecording]);
+  }, []);
 
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -234,7 +214,7 @@ export function IncomeIntelligenceClient() {
               <AlertTitle>Microphone Access Required</AlertTitle>
               <AlertDescription>
                 To use the voice recording feature, please allow microphone access in your browser settings.
-                <Button variant="link" className="p-0 h-auto ml-1" onClick={requestMicPermission}>Try Again</Button>
+                <Button variant="link" className="p-0 h-auto ml-1" onClick={requestMicPermission}>Grant Access</Button>
               </AlertDescription>
             </Alert>
           )}
