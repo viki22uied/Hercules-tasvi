@@ -153,8 +153,7 @@ export function Header() {
             <DropdownMenuLabel>Language</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={language}
-              onValuecha
-nge={onSelectLanguage}
+              onValueChange={onSelectLanguage}
             >
               <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="hi">Hindi</DropdownMenuRadioItem>
