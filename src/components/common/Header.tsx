@@ -13,8 +13,9 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Globe } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useTransition, useEffect } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useState, useTransition, useEffect, useCallback } from 'react';
+import { translateText } from '@/ai/flows/translate-flow';
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
@@ -26,9 +27,7 @@ const pageTitles: { [key: string]: string } = {
   '/scam-simulation': 'Scam & Fraud Simulation',
 };
 
-// A mock translation function. In a real app, you'd use a library like i18next.
-const translate = (key: string, lang: string) => {
-  const translations: Record<string, Record<string, string>> = {
+const translations: Record<string, Record<string, string>> = {
     Dashboard: { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
     'Income Intelligence': { hi: 'आय बुद्धिमत्ता', mr: 'उत्पन्न बुद्धिमत्ता' },
     'Family Finance': { hi: 'पारिवारिक वित्त', mr: 'कौटुंबिक वित्त' },
@@ -38,39 +37,106 @@ const translate = (key: string, lang: string) => {
     'Scam & Fraud Simulation': { hi: 'घोटाळा आणि फसवणूक सिम्युलेशन', mr: 'घोटाळा आणि फसवणूक सिम्युलेशन' },
     'Hercules Finance AI': { hi: 'हरक्यूलिस फायनान्स एआय', mr: 'हरक्यूलिस फायनान्स एआय' },
   };
+
+const translateTitle = (key: string, lang: string) => {
   return translations[key]?.[lang] || key;
+};
+
+// Debounce function
+const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
+    let timeout: NodeJS.Timeout;
+  
+    return (...args: Parameters<F>): Promise<ReturnType<F>> =>
+      new Promise(resolve => {
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+  
+        timeout = setTimeout(() => resolve(func(...args)), waitFor);
+      });
+};
+
+const debouncedTranslate = debounce(translateText, 300);
+
+const translateElements = async (targetLang: string) => {
+    if (targetLang === 'en') {
+        // Restore original text
+        document.querySelectorAll('[data-original-text]').forEach(el => {
+            const originalText = (el as HTMLElement).dataset.originalText;
+            if (originalText) {
+                el.textContent = originalText;
+                (el as HTMLElement).removeAttribute('data-original-text');
+            }
+        });
+        return;
+    }
+
+    const elements = document.querySelectorAll('p, h1, h2, h3, h4, span, div, label, button, a, [data-translate]');
+    const translatableElements: HTMLElement[] = [];
+
+    elements.forEach(el => {
+        const hasNoTranslatableChildren = ![...el.children].some(child => child.tagName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
+        const isNotEmpty = el.textContent?.trim();
+        const isNotSrOnly = !(el as HTMLElement).classList.contains('sr-only');
+        const isNotTranslated = !(el as HTMLElement).dataset.originalText;
+
+        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && isNotTranslated) {
+            translatableElements.push(el as HTMLElement);
+        }
+    });
+
+    for (const el of translatableElements) {
+        const originalText = el.textContent || '';
+        if (originalText.trim().length > 1 && !originalText.startsWith('₹')) { // Basic check to avoid translating just symbols
+            (el as HTMLElement).dataset.originalText = originalText;
+            try {
+                const { translation } = await debouncedTranslate({ text: originalText, targetLang });
+                if (el.textContent === originalText) { // Check if element text hasn't been changed by React re-render
+                    el.textContent = translation;
+                }
+            } catch (e) {
+                console.error("Translation failed for:", originalText, e);
+                el.textContent = originalText; // Revert on failure
+            }
+        }
+    }
 };
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
-  // Get initial language from URL or default to 'en'
-  const getInitialLang = () => {
-    if (typeof window === 'undefined') return 'en';
-    const params = new URLSearchParams(window.location.search);
-    return params.get('lang') || 'en';
-  };
+  const getInitialLang = useCallback(() => {
+    return searchParams.get('lang') || 'en';
+  }, [searchParams]);
 
   const [language, setLanguage] = useState(getInitialLang);
 
   useEffect(() => {
-    setLanguage(getInitialLang());
-  }, [pathname]);
+    const lang = getInitialLang();
+    setLanguage(lang);
+    if (document.readyState === 'complete') {
+        translateElements(lang);
+    } else {
+        window.addEventListener('load', () => translateElements(lang));
+    }
+  }, [pathname, searchParams, getInitialLang]);
 
   const onSelectLanguage = (lang: string) => {
     setLanguage(lang);
-    const newUrl = `${pathname}?lang=${lang}`;
+    const params = new URLSearchParams(window.location.search);
+    params.set('lang', lang);
+    const newUrl = `${pathname}?${params.toString()}`;
+    
     startTransition(() => {
-      router.replace(newUrl);
-      // In a real app with i18next, this would trigger a re-render with new translations.
-      // Here, we manually update the title as a demonstration.
+      router.replace(newUrl, { scroll: false });
     });
   };
   
   const originalTitle = pageTitles[pathname] || 'Hercules Finance AI';
-  const title = translate(originalTitle, language);
+  const title = translateTitle(originalTitle, language);
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -87,7 +153,8 @@ export function Header() {
             <DropdownMenuLabel>Language</DropdownMenuLabel>
             <DropdownMenuRadioGroup
               value={language}
-              onValueChange={onSelectLanguage}
+              onValuecha
+nge={onSelectLanguage}
             >
               <DropdownMenuRadioItem value="en">English</DropdownMenuRadioItem>
               <DropdownMenuRadioItem value="hi">Hindi</DropdownMenuRadioItem>
@@ -118,5 +185,3 @@ export function Header() {
     </header>
   );
 }
-
-    

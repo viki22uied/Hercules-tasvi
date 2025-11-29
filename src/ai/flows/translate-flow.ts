@@ -37,6 +37,10 @@ const translateTextFlow = ai.defineFlow(
     outputSchema: TranslateTextOutputSchema,
   },
   async (input) => {
+    // For English, just return the original text to avoid unnecessary API calls.
+    if (input.targetLang === 'en') {
+      return { translation: input.text };
+    }
     const { output } = await translatePrompt(input);
     return output!;
   }
