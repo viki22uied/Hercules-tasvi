@@ -31,11 +31,16 @@ const translations: Record<string, Record<string, string>> = {
     Dashboard: { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
     'Income Intelligence': { hi: 'आय बुद्धिमत्ता', mr: 'उत्पन्न बुद्धिमत्ता' },
     'Family Finance': { hi: 'पारिवारिक वित्त', mr: 'कौटुंबिक वित्त' },
-    'Personalized Crisis Plan': { hi: 'व्यक्तिगत संकट योजना', mr: 'वैयक्तिक संकट योजना'},
+    'Crisis Plan': { hi: 'संकट योजना', mr: 'संकट योजना' },
     'Cultural Investment': { hi: 'सांस्कृतिक गुंतवणूक', mr: 'सांस्कृतिक गुंतवणूक' },
+    'Stress Sensing': { hi: 'तणाव सेन्सिंग', mr: 'तणाव सेन्सिंग' },
+    'Scam Simulation': { hi: 'घोटाळा सिम्युलेशन', mr: 'घोटाळा सिम्युलेशन' },
+    'Personalized Crisis Plan': { hi: 'व्यक्तिगत संकट योजना', mr: 'वैयक्तिक संकट योजना'},
     'Emotional Stress Sensing': { hi: 'भावनिक तणाव सेन्सिंग', mr: 'भावनिक तणाव सेन्सिंग' },
     'Scam & Fraud Simulation': { hi: 'घोटाळा आणि फसवणूक सिम्युलेशन', mr: 'घोटाळा आणि फसवणूक सिम्युलेशन' },
     'Hercules Finance AI': { hi: 'हरक्यूलिस फायनान्स एआय', mr: 'हरक्यूलिस फायनान्स एआय' },
+    'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
+    'Support': { hi: 'समर्थन', mr: 'समर्थन' },
   };
 
 const translateTitle = (key: string, lang: string) => {
@@ -87,17 +92,22 @@ const translateElements = async (targetLang: string) => {
 
     for (const el of translatableElements) {
         const originalText = el.textContent || '';
-        if (originalText.trim().length > 1 && !originalText.startsWith('₹')) { // Basic check to avoid translating just symbols
+        if (originalText.trim().length > 1 && !originalText.startsWith('₹') && !translations[originalText]) { // Basic check to avoid translating just symbols or already translated text
+             if((el as HTMLElement).dataset.originalText) continue; // Already processed
             (el as HTMLElement).dataset.originalText = originalText;
             try {
                 const { translation } = await debouncedTranslate({ text: originalText, targetLang });
-                if (el.textContent === originalText) { // Check if element text hasn't been changed by React re-render
+                if ((el as HTMLElement).dataset.originalText === originalText) { // Check if element text hasn't been changed by React re-render
                     el.textContent = translation;
                 }
             } catch (e) {
                 console.error("Translation failed for:", originalText, e);
                 el.textContent = originalText; // Revert on failure
             }
+        } else if (translations[originalText] && translations[originalText][targetLang]) {
+            if((el as HTMLElement).dataset.originalText) continue;
+            (el as HTMLElement).dataset.originalText = originalText;
+            el.textContent = translations[originalText][targetLang];
         }
     }
 };
@@ -120,7 +130,11 @@ export function Header() {
     if (document.readyState === 'complete') {
         translateElements(lang);
     } else {
-        window.addEventListener('load', () => translateElements(lang));
+        const handleLoad = () => {
+            translateElements(lang)
+            window.removeEventListener('load', handleLoad)
+        };
+        window.addEventListener('load', handleLoad);
     }
   }, [pathname, searchParams, getInitialLang]);
 
