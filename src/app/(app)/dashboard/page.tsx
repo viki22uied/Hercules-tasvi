@@ -160,24 +160,19 @@ const translations: Record<string, Record<string, string>> = {
 
 
 export default function DashboardPage() {
-  const [mounted, setMounted] = React.useState(false);
   const searchParams = useSearchParams();
   const lang = searchParams.get('lang') || 'en';
 
   const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
     if (lang === 'en' || !key) {
-      return args.length > 0 ? key.replace(/%s/g, () => args.shift()?.toString() || '') : key;
+      return args.length > 0 ? key.replace(/%s/g, () => String(args.shift())) : key;
     }
     let translated = translations[key]?.[lang] || key;
     if (args.length > 0) {
-      translated = translated.replace(/%s/g, () => args.shift()?.toString() || '');
+      translated = translated.replace(/%s/g, () => String(args.shift()));
     }
     return translated;
   }, [lang]);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const translatedChartConfig = useMemo(() => ({
     income: {
@@ -190,9 +185,6 @@ export default function DashboardPage() {
     },
   }), [t]);
 
-  if (!mounted) {
-    return null;
-  }
 
   return (
     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
@@ -388,7 +380,7 @@ export default function DashboardPage() {
                 </div>
                 <Progress
                   value={goal.progress}
-                  aria-label={`${goal.progress}% progress on ${goal.name}`}
+                  aria-label={`${goal.progress}% progress on ${t(goal.name)}`}
                 />
               </div>
             ))}
