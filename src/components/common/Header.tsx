@@ -42,6 +42,8 @@ const translations: Record<string, Record<string, string>> = {
     'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
     'Support': { hi: 'समर्थन', mr: 'समर्थन' },
     'Hercules AI': { hi: 'हरक्यूलिस एआय', mr: 'हरक्यूलिस एआय'},
+    'My Account': { hi: 'मेरा खाता', mr: 'माझे खाते' },
+    'Logout': { hi: 'लॉग आउट', mr: 'लॉग आउट' },
   };
 
 const translateTitle = (key: string, lang: string) => {
@@ -70,8 +72,9 @@ const translateElements = async (targetLang: string) => {
         const originalText = (el as HTMLElement).dataset.originalText;
         if (originalText) {
             el.textContent = originalText;
-            (el as HTMLElement).removeAttribute('data-original-text');
         }
+        (el as HTMLElement).removeAttribute('data-original-text');
+        (el as HTMLElement).removeAttribute('data-translated');
     });
 
     if (targetLang === 'en') return;
@@ -79,37 +82,53 @@ const translateElements = async (targetLang: string) => {
     const elements = document.querySelectorAll('p, h1, h2, h3, h4, span, div, label, button, a, [data-translate]');
     const translatableElements: HTMLElement[] = [];
 
+    const isTranslated = (lang: string, text: string) => {
+        for (const key in translations) {
+            const langValues = Object.values(translations[key]);
+            if (langValues.includes(text)) return true;
+        }
+        return false;
+    };
+    
     elements.forEach(el => {
         const htmlEl = el as HTMLElement;
         const hasNoTranslatableChildren = ![...el.children].some(child => child.nodeName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
-        const isNotEmpty = el.textContent?.trim();
+        const isNotEmpty = htmlEl.textContent?.trim();
         const isNotSrOnly = !htmlEl.classList.contains('sr-only');
-        const isNotTranslated = !htmlEl.dataset.originalText;
+        const isNotTranslated = !htmlEl.hasAttribute('data-translated');
 
         if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && isNotTranslated) {
-            translatableElements.push(htmlEl);
+            if (!isTranslated(targetLang, htmlEl.textContent!.trim())) {
+                 translatableElements.push(htmlEl);
+            }
         }
     });
 
     for (const el of translatableElements) {
         const originalText = el.textContent || '';
         if (originalText.trim().length > 1 && !originalText.startsWith('₹')) {
+            if (el.hasAttribute('data-original-text')) continue;
+
             el.dataset.originalText = originalText;
             try {
-                const staticTranslation = translations[originalText]?.[targetLang];
+                const staticTranslation = translations[originalText.trim()]?.[targetLang];
                 if (staticTranslation) {
                      if (el.dataset.originalText === originalText) {
                         el.textContent = staticTranslation;
+                        el.dataset.translated = "true";
                      }
                 } else {
                     const { translation } = await debouncedTranslate({ text: originalText, targetLang });
                     if (el.dataset.originalText === originalText) { // Check again in case of race condition
                         el.textContent = translation;
+                        el.dataset.translated = "true";
                     }
                 }
             } catch (e) {
                 console.error("Translation failed for:", originalText, e);
-                if(el.dataset.originalText) el.textContent = el.dataset.originalText; // Revert on failure
+                 if (el.dataset.originalText) {
+                    el.textContent = el.dataset.originalText; // Revert on failure
+                 }
             }
         }
     }
