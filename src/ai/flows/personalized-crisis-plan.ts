@@ -39,21 +39,24 @@ const crisisPlanPrompt = ai.definePrompt({
   prompt: `You are a financial advisor tasked with creating personalized plans to help users manage financial shortfalls without causing panic or anxiety.
 
   Analyze the user's financial situation based on the following information:
-  Income: {{income}}
-  Expenses: {{expenses}}
-  Savings: {{savings}}
-  Shortfall Amount: {{shortfallAmount}}
-  Location: {{location}}
-  Recent Transactions: {{recentTransactions}}
+  - Income: {{income}}
+  - Expenses: {{expenses}}
+  - Savings: {{savings}}
+  - Shortfall Amount: {{shortfallAmount}}
+  - Location: {{location}}
+  - Recent Transactions: {{recentTransactions}}
 
-  Based on this information, create a detailed plan that includes:
+  Based on this information, create a detailed plan that is clear, reassuring, and easy to read.
+
+  For the 'plan' output, use Markdown formatting. Use headings (like '### Step 1: Immediate Action'), bullet points (*), and bold text to make it easy to scan.
+  The plan should include:
   1. Specific and actionable steps to optimize expenses.
-  2. Identification of available resources in their location to mitigate the shortfall.
-  3. An estimated duration to overcome the financial shortfall.
+  2. Optional but recommended steps for income enhancement.
+  3. A recommendation for budgeting and tracking.
 
-  Present the plan in a clear, concise, and reassuring manner, focusing on practical solutions and avoiding alarmist language. Do not make up any resources, use only existing programs or services in the plan.
+  For the 'suggestedResources' output, use Markdown formatting with bullet points. Identify available resources in their location to mitigate the shortfall. Do not make up any resources; use only existing programs or services.
 
-  Make sure the plan is realistic and achievable.
+  Make sure the plan is realistic and achievable, and present it in a calm, encouraging tone.
 `,
 });
 

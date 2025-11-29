@@ -102,9 +102,10 @@ export function CrisisPlanClient() {
       <div className="mt-1 flex-shrink-0">{icon}</div>
       <div>
         <h3 className="text-lg font-semibold">{title}</h3>
-        <div className="prose prose-sm max-w-none text-muted-foreground">
-            {content.split('\n').map((paragraph, index) => <p key={index}>{paragraph}</p>)}
-        </div>
+        <div 
+          className="prose prose-sm max-w-none text-muted-foreground"
+          dangerouslySetInnerHTML={{ __html: content.replace(/### (.*?)\n/g, '<h4>$1</h4>').replace(/\* (.*?)\n/g, '<li>$1</li>').replace(/\n/g, '<br/>') }} 
+        />
       </div>
     </div>
   );
