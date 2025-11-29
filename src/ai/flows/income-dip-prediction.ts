@@ -12,11 +12,9 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const PredictIncomeDipInputSchema = z.object({
-  historicalIncomeData: z
+  userInput: z
     .string()
-    .describe('Historical income data, as a JSON string.'),
-  workPattern: z.string().describe('Description of the user work pattern.'),
-  economicTrends: z.string().describe('Description of current economic trends.'),
+    .describe('A user\'s description of their income, work patterns, and any economic factors affecting them.'),
 });
 export type PredictIncomeDipInput = z.infer<typeof PredictIncomeDipInputSchema>;
 
@@ -41,17 +39,15 @@ const prompt = ai.definePrompt({
   name: 'predictIncomeDipPrompt',
   input: {schema: PredictIncomeDipInputSchema},
   output: {schema: PredictIncomeDipOutputSchema},
-  prompt: `You are an AI financial advisor specializing in income forecasting.
+  prompt: `You are an AI financial advisor specializing in income forecasting for gig workers.
 
-You will analyze historical income data, work patterns, and economic trends to forecast weekly income and identify potential income dips.
+  Analyze the user's freeform text input to understand their financial situation. Extract their historical income data, work patterns, and any relevant economic trends they mention.
 
-Based on the analysis, you will provide recommendations to the user to avoid income shortfalls.
+  Based on the analysis, forecast their weekly income, identify potential income dips, and provide actionable recommendations to avoid income shortfalls.
 
-Historical Income Data: {{{historicalIncomeData}}}
-Work Pattern: {{{workPattern}}}
-Economic Trends: {{{economicTrends}}}
+  User Input: {{{userInput}}}
 
-Output the weekly income forecast, potential income dips, and recommendations as JSON strings.
+  Output the weekly income forecast and potential income dips as JSON strings. Provide the recommendations as a clear, easy-to-understand text.
 `,
 });
 
