@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -20,15 +20,41 @@ import {
 import { Loader2, TrendingDown, TrendingUp, Lightbulb } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { useSearchParams } from 'next/navigation';
 
 const formSchema = z.object({
   userInput: z.string().min(10, 'Please describe your income situation.'),
 });
 
+const translations: Record<string, Record<string, string>> = {
+  'Describe your income situation': { hi: 'अपनी आय की स्थिति का वर्णन करें', mr: 'तुमच्या उत्पन्नाच्या परिस्थितीचे वर्णन करा' },
+  'Tell me about your income over the last few months, your type of work, and any concerns you have.': { hi: 'पिछले कुछ महीनों में अपनी आय, अपने काम के प्रकार और अपनी किसी भी चिंता के बारे में बताएं।', mr: 'गेल्या काही महिन्यांतील तुमचे उत्पन्न, तुमच्या कामाचा प्रकार आणि तुमच्या काही चिंतांबद्दल मला सांगा.' },
+  'Analyze Income': { hi: 'आय का विश्लेषण करें', mr: 'उत्पन्नाचे विश्लेषण करा' },
+  'Analysis Failed': { hi: 'विश्लेषण विफल', mr: 'विश्लेषण अयशस्वी' },
+  'Could not analyze your income data. Please try again.': { hi: 'आपकी आय डेटा का विश्लेषण नहीं किया जा सका। कृपया पुनः प्रयास करें।', mr: 'तुमच्या उत्पन्न डेटाचे विश्लेषण करता आले नाही. कृपया पुन्हा प्रयत्न करा.' },
+  'Analysis Results': { hi: 'विश्लेषण के परिणाम', mr: 'विश्लेषण परिणाम' },
+  'Weekly Income Forecast': { hi: 'साप्ताहिक आय पूर्वानुमान', mr: 'साप्ताहिक उत्पन्न अंदाज' },
+  'Potential Income Dips': { hi: 'संभावित आय में गिरावट', mr: 'संभाव्य उत्पन्न घट' },
+  'Recommendations': { hi: 'सिफारिशें', mr: 'शिफारसी' },
+};
+
 export function IncomeIntelligenceClient() {
   const [result, setResult] = useState<PredictIncomeDipOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const lang = searchParams.get('lang') || 'en';
+
+  const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
+    if (lang === 'en') {
+      return args.length > 0 ? key.replace(/%s/g, () => args.shift()?.toString() || '') : key;
+    }
+    let translated = translations[key]?.[lang] || key;
+    if (args.length > 0) {
+      translated = translated.replace(/%s/g, () => args.shift()?.toString() || '');
+    }
+    return translated;
+  }, [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,8 +74,8 @@ export function IncomeIntelligenceClient() {
       console.error('Error predicting income dip:', error);
        toast({
         variant: "destructive",
-        title: "Analysis Failed",
-        description: "Could not analyze your income data. Please try again."
+        title: t("Analysis Failed"),
+        description: t("Could not analyze your income data. Please try again.")
       })
     } finally {
       setIsLoading(false);
@@ -96,10 +122,10 @@ export function IncomeIntelligenceClient() {
             name="userInput"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Describe your income situation</FormLabel>
+                <FormLabel>{t('Describe your income situation')}</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder="Tell me about your income over the last few months, your type of work, and any concerns you have."
+                    placeholder={t('Tell me about your income over the last few months, your type of work, and any concerns you have.')}
                     rows={8}
                     {...field}
                   />
@@ -112,7 +138,7 @@ export function IncomeIntelligenceClient() {
           <div className="flex items-center gap-4">
             <Button type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Analyze Income
+              {t('Analyze Income')}
             </Button>
           </div>
         </form>
@@ -120,14 +146,14 @@ export function IncomeIntelligenceClient() {
 
       {result && (
         <div className="mt-8 space-y-6">
-          <h2 className="text-2xl font-bold font-headline">Analysis Results</h2>
+          <h2 className="text-2xl font-bold font-headline">{t('Analysis Results')}</h2>
           <div className="grid gap-4 md:grid-cols-1">
-            {renderJson(result.weeklyIncomeForecast, "Weekly Income Forecast", <TrendingUp className="h-5 w-5 text-green-500"/>)}
-            {renderJson(result.potentialIncomeDips, "Potential Income Dips", <TrendingDown className="h-5 w-5 text-red-500"/>)}
+            {renderJson(result.weeklyIncomeForecast, t("Weekly Income Forecast"), <TrendingUp className="h-5 w-5 text-green-500"/>)}
+            {renderJson(result.potentialIncomeDips, t("Potential Income Dips"), <TrendingDown className="h-5 w-5 text-red-500"/>)}
              <Card>
                 <CardHeader className="flex flex-row items-center gap-2 space-y-0">
                     <Lightbulb className="h-5 w-5 text-yellow-500"/>
-                    <CardTitle>Recommendations</CardTitle>
+                    <CardTitle>{t('Recommendations')}</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <p className="text-sm text-muted-foreground">{result.recommendations}</p>

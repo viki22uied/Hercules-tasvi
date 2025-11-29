@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
 } from '@/ai/flows/cultural-investment-guidance';
 import { Loader2, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSearchParams } from 'next/navigation';
 
 const formSchema = z.object({
   culturalBackground: z
@@ -45,10 +46,35 @@ const locations = [
   'Hyderabad',
 ];
 
+const translations: Record<string, Record<string, string>> = {
+  'Cultural Background': { hi: 'सांस्कृतिक पृष्ठभूमि', mr: 'सांस्कृतिक पार्श्वभूमी' },
+  'e.g., South Indian': { hi: 'जैसे, दक्षिण भारतीय', mr: 'उदा. दक्षिण भारतीय' },
+  'Festival': { hi: 'त्योहार', mr: 'सण' },
+  'e.g., Diwali, Pongal': { hi: 'जैसे, दिवाली, पोंगल', mr: 'उदा. दिवाळी, पोंगल' },
+  'Location': { hi: 'स्थान', mr: 'स्थान' },
+  'Select a location': { hi: 'एक स्थान चुनें', mr: 'एक स्थान निवडा' },
+  'Investment Amount (INR)': { hi: 'निवेश राशि (INR)', mr: 'गुंतवणूक रक्कम (INR)' },
+  'Get Guidance': { hi: 'मार्गदर्शन प्राप्त करें', mr: 'मार्गदर्शन मिळवा' },
+  'Your Personalized Investment Guidance': { hi: 'आपकी व्यक्तिगत निवेश मार्गदर्शिका', mr: 'तुमचे वैयक्तिक गुंतवणूक मार्गदर्शन' },
+};
+
 export function CulturalInvestmentClient() {
   const [result, setResult] =
     useState<CulturalInvestmentGuidanceOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const lang = searchParams.get('lang') || 'en';
+
+  const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
+    if (lang === 'en') {
+      return args.length > 0 ? key.replace(/%s/g, () => args.shift()?.toString() || '') : key;
+    }
+    let translated = translations[key]?.[lang] || key;
+    if (args.length > 0) {
+      translated = translated.replace(/%s/g, () => args.shift()?.toString() || '');
+    }
+    return translated;
+  }, [lang]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -83,9 +109,9 @@ export function CulturalInvestmentClient() {
               name="culturalBackground"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Cultural Background</FormLabel>
+                  <FormLabel>{t('Cultural Background')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., South Indian" {...field} />
+                    <Input placeholder={t('e.g., South Indian')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -96,9 +122,9 @@ export function CulturalInvestmentClient() {
               name="festival"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Festival</FormLabel>
+                  <FormLabel>{t('Festival')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Diwali, Pongal" {...field} />
+                    <Input placeholder={t('e.g., Diwali, Pongal')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -109,14 +135,14 @@ export function CulturalInvestmentClient() {
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
+                  <FormLabel>{t('Location')}</FormLabel>
                   <Select
                     onValueChange={field.onChange}
                     defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a location" />
+                        <SelectValue placeholder={t('Select a location')} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -136,7 +162,7 @@ export function CulturalInvestmentClient() {
               name="investmentAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Investment Amount (INR)</FormLabel>
+                  <FormLabel>{t('Investment Amount (INR)')}</FormLabel>
                   <FormControl>
                     <Input type="number" placeholder="50000" {...field} />
                   </FormControl>
@@ -147,7 +173,7 @@ export function CulturalInvestmentClient() {
           </div>
           <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Get Guidance
+            {t('Get Guidance')}
           </Button>
         </form>
       </Form>
@@ -157,7 +183,7 @@ export function CulturalInvestmentClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" />
-              Your Personalized Investment Guidance
+              {t('Your Personalized Investment Guidance')}
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -26,6 +26,7 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useSearchParams } from 'next/navigation';
 
 const formSchema = z.object({
   income: z.coerce.number().positive('Income must be positive.'),
@@ -36,9 +37,40 @@ const formSchema = z.object({
   recentTransactions: z.string().min(10, 'Please list some transactions.'),
 });
 
+const translations: Record<string, Record<string, string>> = {
+  'Monthly Income (₹)': { hi: 'मासिक आय (₹)', mr: 'मासिक उत्पन्न (₹)' },
+  'Monthly Expenses (₹)': { hi: 'मासिक खर्च (₹)', mr: 'मासिक खर्च (₹)' },
+  'Total Savings (₹)': { hi: 'कुल बचत (₹)', mr: 'एकूण बचत (₹)' },
+  'Financial Shortfall Amount (₹)': { hi: 'वित्तीय कमी की राशि (₹)', mr: 'आर्थिक तुटवड्याची रक्कम (₹)' },
+  'Location': { hi: 'स्थान', mr: 'स्थान' },
+  'City, State': { hi: 'शहर, राज्य', mr: 'शहर, राज्य' },
+  'Recent Transactions': { hi: 'हाल के लेनदेन', mr: 'अलीकडील व्यवहार' },
+  'List some recent purchases...': { hi: 'कुछ हाल की खरीदारी की सूची बनाएं...', mr: 'काही अलीकडील खरेदीची सूची करा...' },
+  'Generate Plan': { hi: 'योजना बनाएं', mr: 'योजना तयार करा' },
+  'Your Personalized Crisis Plan': { hi: 'आपकी व्यक्तिगत संकट योजना', mr: 'तुमची वैयक्तिक संकट योजना' },
+  'Actionable Plan': { hi: 'कार्रवाई योग्य योजना', mr: 'कार्यवाही करण्यायोग्य योजना' },
+  'Estimated Duration': { hi: 'अनुमानित अवधि', mr: 'अंदाजे कालावधी' },
+  'Suggested Resources': { hi: 'सुझाए गए संसाधन', mr: 'सुचवलेले संसाधने' },
+};
+
+
 export function CrisisPlanClient() {
   const [result, setResult] = useState<CrisisPlanOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const lang = searchParams.get('lang') || 'en';
+
+  const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
+    if (lang === 'en') {
+      return args.length > 0 ? key.replace(/%s/g, () => args.shift()?.toString() || '') : key;
+    }
+    let translated = translations[key]?.[lang] || key;
+    if (args.length > 0) {
+      translated = translated.replace(/%s/g, () => args.shift()?.toString() || '');
+    }
+    return translated;
+  }, [lang]);
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -87,7 +119,7 @@ export function CrisisPlanClient() {
               name="income"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Income (₹)</FormLabel>
+                  <FormLabel>{t('Monthly Income (₹)')}</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -100,7 +132,7 @@ export function CrisisPlanClient() {
               name="expenses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Expenses (₹)</FormLabel>
+                  <FormLabel>{t('Monthly Expenses (₹)')}</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -113,7 +145,7 @@ export function CrisisPlanClient() {
               name="savings"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Savings (₹)</FormLabel>
+                  <FormLabel>{t('Total Savings (₹)')}</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -126,7 +158,7 @@ export function CrisisPlanClient() {
               name="shortfallAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Financial Shortfall Amount (₹)</FormLabel>
+                  <FormLabel>{t('Financial Shortfall Amount (₹)')}</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -140,9 +172,9 @@ export function CrisisPlanClient() {
               name="location"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Location</FormLabel>
+                  <FormLabel>{t('Location')}</FormLabel>
                   <FormControl>
-                    <Input placeholder="City, State" {...field} />
+                    <Input placeholder={t('City, State')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -153,9 +185,9 @@ export function CrisisPlanClient() {
               name="recentTransactions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Recent Transactions</FormLabel>
+                  <FormLabel>{t('Recent Transactions')}</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="List some recent purchases..." {...field} />
+                    <Textarea placeholder={t('List some recent purchases...')} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -163,7 +195,7 @@ export function CrisisPlanClient() {
             />
           <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Generate Plan
+            {t('Generate Plan')}
           </Button>
         </form>
       </Form>
@@ -173,18 +205,16 @@ export function CrisisPlanClient() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-6 w-6 text-primary" />
-              Your Personalized Crisis Plan
+              {t('Your Personalized Crisis Plan')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            {renderSection('Actionable Plan', result.plan, <ListChecks className="text-primary"/>)}
-            {renderSection('Estimated Duration', result.estimatedDuration, <Clock className="text-primary"/>)}
-            {renderSection('Suggested Resources', result.suggestedResources, <BookUser className="text-primary"/>)}
+            {renderSection(t('Actionable Plan'), result.plan, <ListChecks className="text-primary"/>)}
+            {renderSection(t('Estimated Duration'), result.estimatedDuration, <Clock className="text-primary"/>)}
+            {renderSection(t('Suggested Resources'), result.suggestedResources, <BookUser className="text-primary"/>)}
           </CardContent>
         </Card>
       )}
     </div>
   );
 }
-
-    
