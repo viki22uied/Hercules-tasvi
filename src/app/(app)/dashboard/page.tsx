@@ -19,11 +19,13 @@ import { Button } from '@/components/ui/button';
 import {
   ArrowUpRight,
   User,
+  Send,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import React, { useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { SendMoneyDialog } from './components/SendMoneyDialog';
 
 const transactions = [
   {
@@ -128,6 +130,7 @@ export default function DashboardPage() {
               {t('yourname@hercules')}
             </p>
           </div>
+          <SendMoneyDialog t={t} />
         </CardContent>
       </Card>
 
