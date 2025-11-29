@@ -18,9 +18,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
   ArrowUpRight,
-  ArrowRight,
-  ArrowLeft,
-  QrCode,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -127,23 +124,9 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold">
               {t('Welcome Back, User!')}
             </h2>
-            <p className="text-sm text-muted-foreground font-mono">
+            <p className="text-sm text-muted-foreground font-mono bg-muted px-3 py-1 rounded-full">
               {t('yourname@hercules')}
             </p>
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:gap-4 w-full max-w-md pt-4">
-            <Button variant="outline" className="flex-col h-auto py-3">
-              <ArrowRight className="h-5 w-5 mb-1" />
-              <span>{t('Send Money')}</span>
-            </Button>
-            <Button variant="outline" className="flex-col h-auto py-3">
-              <ArrowLeft className="h-5 w-5 mb-1" />
-              <span>{t('Request Money')}</span>
-            </Button>
-            <Button className="flex-col h-auto py-3 col-span-3 sm:col-span-1">
-              <QrCode className="h-5 w-5 mb-1" />
-              <span>{t('Scan & Pay')}</span>
-            </Button>
           </div>
         </CardContent>
       </Card>
