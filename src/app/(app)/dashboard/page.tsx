@@ -226,17 +226,17 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="grid gap-4">
             {upcomingBills.map((bill) => (
-              <div key={bill.id} className="flex items-center gap-4">
-                <div className="grid gap-1">
+              <div key={bill.id} className="flex items-center gap-2">
+                <div className="grid gap-1 flex-1">
                   <p className="font-medium leading-none">{bill.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Due: {new Date(bill.dueDate).toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })}
                   </p>
                 </div>
-                <div className="ml-auto font-medium">
+                <div className="font-medium text-right">
                   ₹{bill.amount.toLocaleString('en-IN')}
                 </div>
-                <Button size="sm" variant="outline">
+                <Button size="sm" variant="outline" className="ml-auto">
                   Pay
                 </Button>
               </div>
@@ -310,9 +310,9 @@ export default function DashboardPage() {
           <CardContent className="grid gap-6">
             {savingsGoals.map((goal) => (
               <div key={goal.id} className="grid gap-2">
-                <div className="flex justify-between font-medium">
-                  <span>{goal.name}</span>
-                  <span>
+                <div className="flex justify-between items-start font-medium gap-2">
+                  <span className="flex-1">{goal.name}</span>
+                  <span className="text-right">
                     ₹{goal.current.toLocaleString('en-IN')} / ₹
                     {goal.goal.toLocaleString('en-IN')}
                   </span>
