@@ -5,7 +5,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card';
 import {
   Table,
@@ -18,26 +17,23 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowUpRight, DollarSign, CreditCard, Activity } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis } from 'recharts';
 import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-} from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/components/ui/chart';
 import React from 'react';
 
 const cashFlowData = [
-  { name: 'Jan', income: 4000, expenses: 2400 },
-  { name: 'Feb', income: 3000, expenses: 1398 },
-  { name: 'Mar', income: 5000, expenses: 3800 },
-  { name: 'Apr', income: 2780, expenses: 3908 },
-  { name: 'May', income: 1890, expenses: 4800 },
-  { name: 'Jun', income: 2390, expenses: 3800 },
+  { month: 'Jan', income: 4000, expenses: 2400 },
+  { month: 'Feb', income: 3000, expenses: 1398 },
+  { month: 'Mar', income: 5000, expenses: 3800 },
+  { month: 'Apr', income: 2780, expenses: 3908 },
+  { month: 'May', income: 1890, expenses: 4800 },
+  { month: 'Jun', income: 2390, expenses: 3800 },
 ];
 
 const transactions = [
@@ -108,6 +104,17 @@ const savingsGoals = [
   },
 ];
 
+const chartConfig = {
+  income: {
+    label: 'Income',
+    color: 'hsl(var(--primary))',
+  },
+  expenses: {
+    label: 'Expenses',
+    color: 'hsl(var(--muted-foreground))',
+  },
+};
+
 export default function DashboardPage() {
   const [mounted, setMounted] = React.useState(false);
   React.useEffect(() => {
@@ -117,7 +124,7 @@ export default function DashboardPage() {
   if (!mounted) {
     return null;
   }
-  
+
   return (
     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
@@ -154,7 +161,7 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-         <Card>
+        <Card>
           <CardHeader className="pb-2">
             <CardDescription>Credit Score</CardDescription>
             <CardTitle className="text-4xl">750</CardTitle>
@@ -171,13 +178,15 @@ export default function DashboardPage() {
         <Card className="lg:col-span-4">
           <CardHeader>
             <CardTitle>Cash Flow</CardTitle>
-            <CardDescription>Income vs. Expenses over the last 6 months.</CardDescription>
+            <CardDescription>
+              Income vs. Expenses over the last 6 months.
+            </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={cashFlowData}>
+            <ChartContainer config={chartConfig} className="min-h-[300px] w-full">
+              <BarChart accessibilityLayer data={cashFlowData}>
                 <XAxis
-                  dataKey="name"
+                  dataKey="month"
                   stroke="#888888"
                   fontSize={12}
                   tickLine={false}
@@ -190,22 +199,22 @@ export default function DashboardPage() {
                   axisLine={false}
                   tickFormatter={(value) => `$${value}`}
                 />
-                <Tooltip
+                <ChartTooltip
                   cursor={{ fill: 'hsl(var(--accent))' }}
                   content={<ChartTooltipContent />}
                 />
                 <Bar
                   dataKey="income"
-                  fill="hsl(var(--primary))"
+                  fill="var(--color-income)"
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="expenses"
-                  fill="hsl(var(--muted-foreground))"
+                  fill="var(--color-expenses)"
                   radius={[4, 4, 0, 0]}
                 />
               </BarChart>
-            </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
@@ -227,19 +236,23 @@ export default function DashboardPage() {
                 <div className="ml-auto font-medium">
                   ${bill.amount.toFixed(2)}
                 </div>
-                <Button size="sm" variant="outline">Pay</Button>
+                <Button size="sm" variant="outline">
+                  Pay
+                </Button>
               </div>
             ))}
           </CardContent>
         </Card>
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader className="flex flex-row items-center">
             <div className="grid gap-2">
               <CardTitle>Recent Transactions</CardTitle>
-              <CardDescription>Your 5 most recent transactions.</CardDescription>
+              <CardDescription>
+                Your 5 most recent transactions.
+              </CardDescription>
             </div>
             <Button asChild size="sm" className="ml-auto gap-1">
               <Link href="#">
@@ -261,7 +274,9 @@ export default function DashboardPage() {
                 {transactions.map((transaction) => (
                   <TableRow key={transaction.id}>
                     <TableCell>
-                      <div className="font-medium">{transaction.description}</div>
+                      <div className="font-medium">
+                        {transaction.description}
+                      </div>
                       <div className="text-sm text-muted-foreground">
                         {transaction.date}
                       </div>
@@ -271,7 +286,9 @@ export default function DashboardPage() {
                     </TableCell>
                     <TableCell
                       className={`text-right font-medium ${
-                        transaction.amount > 0 ? 'text-green-600' : 'text-foreground'
+                        transaction.amount > 0
+                          ? 'text-green-600'
+                          : 'text-foreground'
                       }`}
                     >
                       {transaction.amount > 0 ? '+' : ''}$
@@ -286,16 +303,24 @@ export default function DashboardPage() {
         <Card className="lg:col-span-3">
           <CardHeader>
             <CardTitle>Savings Goals</CardTitle>
-            <CardDescription>Track your progress towards your financial goals.</CardDescription>
+            <CardDescription>
+              Track your progress towards your financial goals.
+            </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-6">
-            {savingsGoals.map(goal => (
+            {savingsGoals.map((goal) => (
               <div key={goal.id} className="grid gap-2">
                 <div className="flex justify-between font-medium">
                   <span>{goal.name}</span>
-                  <span>${goal.current.toLocaleString()} / ${goal.goal.toLocaleString()}</span>
+                  <span>
+                    ${goal.current.toLocaleString()} / $
+                    {goal.goal.toLocaleString()}
+                  </span>
                 </div>
-                <Progress value={goal.progress} aria-label={`${goal.progress}% progress on ${goal.name}`} />
+                <Progress
+                  value={goal.progress}
+                  aria-label={`${goal.progress}% progress on ${goal.name}`}
+                />
               </div>
             ))}
           </CardContent>
