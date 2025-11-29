@@ -20,6 +20,8 @@ import {
 import { Loader2, TrendingDown, TrendingUp, Lightbulb, Mic, Square } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
 
 const formSchema = z.object({
   userInput: z.string().min(10, 'Please describe your income situation.'),
@@ -29,6 +31,7 @@ export function IncomeIntelligenceClient() {
   const [result, setResult] = useState<PredictIncomeDipOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const [hasMicPermission, setHasMicPermission] = useState<boolean | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
   const { toast } = useToast();
@@ -41,11 +44,42 @@ export function IncomeIntelligenceClient() {
     },
   });
 
+  const requestMicPermission = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      setHasMicPermission(true);
+       // Immediately stop the stream; we only wanted to check permission.
+       // We will request it again when the user actually starts recording.
+      stream.getTracks().forEach(track => track.stop());
+      return true;
+    } catch (error) {
+      console.error("Error accessing microphone:", error);
+      setHasMicPermission(false);
+      toast({
+        variant: "destructive",
+        title: "Microphone Access Denied",
+        description: "Please enable microphone permissions in your browser settings to use the recording feature."
+      });
+      return false;
+    }
+  };
+
+
   const handleStartRecording = async () => {
-    if (isRecording) {
-      handleStopRecording();
+     if (hasMicPermission === null) {
+      const permissionGranted = await requestMicPermission();
+      if (!permissionGranted) return;
+    }
+    
+    if (hasMicPermission === false) {
+       toast({
+        variant: "destructive",
+        title: "Microphone Access Denied",
+        description: "Please enable microphone permissions in your browser settings to use the recording feature."
+      });
       return;
     }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
@@ -78,11 +112,12 @@ export function IncomeIntelligenceClient() {
       });
 
     } catch (error) {
-      console.error("Error accessing microphone:", error);
+      console.error("Error starting recording:", error);
+      setIsRecording(false); // Ensure state is correct on error
       toast({
         variant: "destructive",
-        title: "Microphone Error",
-        description: "Could not access the microphone. Please check your browser permissions."
+        title: "Recording Error",
+        description: "Could not start recording. Please try again."
       })
     }
   };
@@ -95,14 +130,23 @@ export function IncomeIntelligenceClient() {
   };
   
   useEffect(() => {
+    // Check for mic permission on component mount without prompting the user.
+    navigator.permissions?.query({ name: 'microphone' as PermissionName }).then((permissionStatus) => {
+      setHasMicPermission(permissionStatus.state === 'granted');
+      permissionStatus.onchange = () => {
+         setHasMicPermission(permissionStatus.state === 'granted');
+      };
+    });
+
     // Cleanup function to stop recording and stream if component unmounts
     return () => {
       if (mediaRecorderRef.current) {
-        if(isRecording) {
-          mediaRecorderRef.current.stop();
+        const stream = mediaRecorderRef.current.stream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
         }
-        if (mediaRecorderRef.current.stream) {
-          mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+        if (isRecording) {
+          mediaRecorderRef.current.stop();
         }
       }
     };
@@ -179,6 +223,16 @@ export function IncomeIntelligenceClient() {
               </FormItem>
             )}
           />
+           {hasMicPermission === false && (
+            <Alert variant="destructive">
+              <Mic className="h-4 w-4" />
+              <AlertTitle>Microphone Access Required</AlertTitle>
+              <AlertDescription>
+                To use the voice recording feature, please allow microphone access in your browser settings.
+                <Button variant="link" className="p-0 h-auto ml-1" onClick={requestMicPermission}>Try Again</Button>
+              </AlertDescription>
+            </Alert>
+          )}
 
           <div className="flex items-center gap-4">
             <Button type="submit" disabled={isLoading || isRecording}>
