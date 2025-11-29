@@ -10,13 +10,13 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-export const TranslateTextInputSchema = z.object({
+const TranslateTextInputSchema = z.object({
   text: z.string().describe('The text to be translated.'),
   targetLang: z.string().describe('The target language code (e.g., "hi" for Hindi, "en" for English).'),
 });
 export type TranslateTextInput = z.infer<typeof TranslateTextInputSchema>;
 
-export const TranslateTextOutputSchema = z.object({
+const TranslateTextOutputSchema = z.object({
   translation: z.string().describe('The translated text.'),
 });
 export type TranslateTextOutput = z.infer<typeof TranslateTextOutputSchema>;
@@ -30,7 +30,7 @@ Text: {{{text}}}
 `,
 });
 
-export const translateTextFlow = ai.defineFlow(
+const translateTextFlow = ai.defineFlow(
   {
     name: 'translateTextFlow',
     inputSchema: TranslateTextInputSchema,
@@ -46,5 +46,3 @@ export const translateTextFlow = ai.defineFlow(
 export async function translateText(input: TranslateTextInput): Promise<TranslateTextOutput> {
   return translateTextFlow(input);
 }
-
-    
