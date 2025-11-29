@@ -29,6 +29,7 @@ import {
   Tooltip,
 } from 'recharts';
 import { ChartTooltipContent } from '@/components/ui/chart';
+import React from 'react';
 
 const cashFlowData = [
   { name: 'Jan', income: 4000, expenses: 2400 },
@@ -108,6 +109,15 @@ const savingsGoals = [
 ];
 
 export default function DashboardPage() {
+  const [mounted, setMounted] = React.useState(false);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+  
   return (
     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
