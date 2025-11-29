@@ -12,12 +12,12 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const CrisisPlanInputSchema = z.object({
-  income: z.number().describe('The user\'s monthly income.'),
-  expenses: z.number().describe('The user\'s monthly expenses.'),
-  savings: z.number().describe('The user\'s total savings.'),
+  income: z.number().describe("The user's monthly income."),
+  expenses: z.number().describe("The user's monthly expenses."),
+  savings: z.number().describe("The user's total savings."),
   shortfallAmount: z.number().describe('The amount of the financial shortfall.'),
-  location: z.string().describe('The user\'s current location (city, state).'),
-  recentTransactions: z.string().describe('A list of user\'s most recent transactions.'),
+  location: z.string().describe("The user's current location (city, state)."),
+  recentTransactions: z.string().describe("A list of user's most recent transactions."),
 });
 export type CrisisPlanInput = z.infer<typeof CrisisPlanInputSchema>;
 
@@ -36,9 +36,9 @@ const crisisPlanPrompt = ai.definePrompt({
   name: 'crisisPlanPrompt',
   input: {schema: CrisisPlanInputSchema},
   output: {schema: CrisisPlanOutputSchema},
-  prompt: `You are a financial advisor tasked with creating personalized plans to help users manage financial shortfalls without causing panic or anxiety.
+  prompt: `You are a financial advisor creating a concise, personalized plan to help a user manage a financial shortfall. Be reassuring and direct.
 
-  Analyze the user's financial situation based on the following information:
+  Analyze the user's financial situation:
   - Income: {{income}}
   - Expenses: {{expenses}}
   - Savings: {{savings}}
@@ -46,17 +46,15 @@ const crisisPlanPrompt = ai.definePrompt({
   - Location: {{location}}
   - Recent Transactions: {{recentTransactions}}
 
-  Based on this information, create a detailed plan that is clear, reassuring, and easy to read.
+  Generate a brief, scannable plan using Markdown. Use headings (e.g., '### Step 1'), bullet points (*), and bold text.
+  The plan should be short and to the point.
+  1.  Actionable steps to optimize expenses.
+  2.  Optional steps for income enhancement.
+  3.  A recommendation for budgeting.
 
-  For the 'plan' output, use Markdown formatting. Use headings (like '### Step 1: Immediate Action'), bullet points (*), and bold text to make it easy to scan.
-  The plan should include:
-  1. Specific and actionable steps to optimize expenses.
-  2. Optional but recommended steps for income enhancement.
-  3. A recommendation for budgeting and tracking.
+  For 'suggestedResources', provide a short bulleted list of real resources in their location.
 
-  For the 'suggestedResources' output, use Markdown formatting with bullet points. Identify available resources in their location to mitigate the shortfall. Do not make up any resources; use only existing programs or services.
-
-  Make sure the plan is realistic and achievable, and present it in a calm, encouraging tone.
+  Make the entire output calm, concise, and easy to read.
 `,
 });
 
