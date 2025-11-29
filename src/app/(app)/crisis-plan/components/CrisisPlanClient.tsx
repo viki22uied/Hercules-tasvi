@@ -43,12 +43,12 @@ export function CrisisPlanClient() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      income: 5000,
-      expenses: 4500,
-      savings: 2000,
-      shortfallAmount: 1000,
-      location: 'New York, NY',
-      recentTransactions: 'Groceries: $150, Rent: $2000, Gas: $50, Dining out: $80',
+      income: 50000,
+      expenses: 45000,
+      savings: 20000,
+      shortfallAmount: 10000,
+      location: 'Mumbai, MH',
+      recentTransactions: 'Groceries: ₹1500, Rent: ₹20000, Petrol: ₹500, Dining out: ₹800',
     },
   });
 
@@ -87,7 +87,7 @@ export function CrisisPlanClient() {
               name="income"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Income ($)</FormLabel>
+                  <FormLabel>Monthly Income (₹)</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -100,7 +100,7 @@ export function CrisisPlanClient() {
               name="expenses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monthly Expenses ($)</FormLabel>
+                  <FormLabel>Monthly Expenses (₹)</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -113,7 +113,7 @@ export function CrisisPlanClient() {
               name="savings"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Savings ($)</FormLabel>
+                  <FormLabel>Total Savings (₹)</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -126,7 +126,7 @@ export function CrisisPlanClient() {
               name="shortfallAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Financial Shortfall Amount ($)</FormLabel>
+                  <FormLabel>Financial Shortfall Amount (₹)</FormLabel>
                   <FormControl>
                     <Input type="number" {...field} />
                   </FormControl>
@@ -186,3 +186,5 @@ export function CrisisPlanClient() {
     </div>
   );
 }
+
+    

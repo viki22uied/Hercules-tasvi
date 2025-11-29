@@ -25,9 +25,9 @@ import { PlusCircle } from 'lucide-react';
 
 const familyMembers = [
   { name: 'You', status: 'Paid', avatarId: 'avatar1' },
-  { name: 'Jane Doe', status: 'Paid', avatarId: 'avatar2' },
-  { name: 'John Jr.', status: 'Pending', avatarId: 'avatar3' },
-  { name: 'Jenny Doe', status: 'Overdue', avatarId: 'avatar4' },
+  { name: 'Riya', status: 'Paid', avatarId: 'avatar2' },
+  { name: 'Rohan', status: 'Pending', avatarId: 'avatar3' },
+  { name: 'Priya', status: 'Overdue', avatarId: 'avatar4' },
 ];
 
 const sharedExpenses = [
@@ -35,7 +35,7 @@ const sharedExpenses = [
     id: 'exp1',
     description: 'Monthly Rent',
     category: 'Housing',
-    amount: 2200,
+    amount: 22000,
     date: '2024-07-01',
     paidBy: 'You',
   },
@@ -43,15 +43,15 @@ const sharedExpenses = [
     id: 'exp2',
     description: 'Groceries',
     category: 'Food',
-    amount: 450.75,
+    amount: 4500,
     date: '2024-07-15',
-    paidBy: 'Jane Doe',
+    paidBy: 'Riya',
   },
   {
     id: 'exp3',
-    description: 'Internet &amp; Cable',
+    description: 'Internet & Cable',
     category: 'Utilities',
-    amount: 120,
+    amount: 1200,
     date: '2024-07-10',
     paidBy: 'You',
   },
@@ -59,15 +59,15 @@ const sharedExpenses = [
     id: 'exp4',
     description: 'Family Dinner',
     category: 'Entertainment',
-    amount: 150.5,
+    amount: 1500,
     date: '2024-07-18',
-    paidBy: 'Jane Doe',
+    paidBy: 'Riya',
   },
   {
     id: 'exp5',
     description: 'Electricity Bill',
     category: 'Utilities',
-    amount: 85.2,
+    amount: 850,
     date: '2024-07-20',
     paidBy: 'You',
   },
@@ -82,6 +82,10 @@ const getAvatarHint = (avatarId: string) => {
 }
 
 export default function FamilyFinancePage() {
+  const totalShared = sharedExpenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const yourContribution = sharedExpenses.filter(e => e.paidBy === 'You').reduce((sum, exp) => sum + exp.amount, 0);
+  const yourContributionPercentage = totalShared > 0 ? (yourContribution / totalShared) * 100 : 0;
+
   return (
     <div className="grid flex-1 items-start gap-4 p-4 sm:px-6 sm:py-0 md:gap-8 lg:grid-cols-3 xl:grid-cols-3">
       <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
@@ -89,7 +93,7 @@ export default function FamilyFinancePage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Shared This Month</CardDescription>
-              <CardTitle className="text-4xl">$3,006.45</CardTitle>
+              <CardTitle className="text-4xl">₹{totalShared.toLocaleString('en-IN')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-xs text-muted-foreground">
@@ -100,11 +104,11 @@ export default function FamilyFinancePage() {
           <Card>
             <CardHeader className="pb-2">
               <CardDescription>Your Contribution</CardDescription>
-              <CardTitle className="text-4xl">$2,405.20</CardTitle>
+              <CardTitle className="text-4xl">₹{yourContribution.toLocaleString('en-IN')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-xs text-muted-foreground">
-                80% of total expenses
+                {yourContributionPercentage.toFixed(0)}% of total expenses
               </div>
             </CardContent>
           </Card>
@@ -139,13 +143,13 @@ export default function FamilyFinancePage() {
                       {expense.category}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {expense.date}
+                       {new Date(expense.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric'})}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {expense.paidBy}
                     </TableCell>
                     <TableCell className="text-right">
-                      ${expense.amount.toFixed(2)}
+                      ₹{expense.amount.toLocaleString('en-IN')}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -204,3 +208,5 @@ export default function FamilyFinancePage() {
     </div>
   );
 }
+
+    

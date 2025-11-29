@@ -28,79 +28,79 @@ import {
 import React from 'react';
 
 const cashFlowData = [
-  { month: 'Jan', income: 4000, expenses: 2400 },
-  { month: 'Feb', income: 3000, expenses: 1398 },
-  { month: 'Mar', income: 5000, expenses: 3800 },
-  { month: 'Apr', income: 2780, expenses: 3908 },
-  { month: 'May', income: 1890, expenses: 4800 },
-  { month: 'Jun', income: 2390, expenses: 3800 },
+  { month: 'Jan', income: 35000, expenses: 20000 },
+  { month: 'Feb', income: 32000, expenses: 15000 },
+  { month: 'Mar', income: 45000, expenses: 28000 },
+  { month: 'Apr', income: 28000, expenses: 30000 },
+  { month: 'May', income: 25000, expenses: 32000 },
+  { month: 'Jun', income: 30000, expenses: 25000 },
 ];
 
 const transactions = [
   {
     id: 'txn1',
-    description: 'Starbucks',
-    amount: -5.75,
+    description: 'Swiggy',
+    amount: -250,
     date: '2024-07-22',
     category: 'Food',
   },
   {
     id: 'txn2',
-    description: 'Paycheck',
-    amount: 1250.0,
+    description: 'Weekly Payout',
+    amount: 8000,
     date: '2024-07-21',
     category: 'Income',
   },
   {
     id: 'txn3',
-    description: 'Netflix Subscription',
-    amount: -15.99,
+    description: 'Phone Bill',
+    amount: -499,
     date: '2024-07-20',
     category: 'Bills',
   },
   {
     id: 'txn4',
-    description: 'Gas Station',
-    amount: -45.3,
+    description: 'Petrol',
+    amount: -1500,
     date: '2024-07-20',
     category: 'Transport',
   },
   {
     id: 'txn5',
-    description: 'Grocery Store',
-    amount: -120.55,
+    description: 'Groceries from DMart',
+    amount: -3500,
     date: '2024-07-19',
     category: 'Food',
   },
 ];
 
 const upcomingBills = [
-  { id: 'bill1', name: 'Rent', amount: 1500, dueDate: '2024-08-01' },
-  { id: 'bill2', name: 'Car Payment', amount: 350, dueDate: '2024-08-05' },
-  { id: 'bill3', name: 'Internet', amount: 60, dueDate: '2024-08-10' },
+  { id: 'bill1', name: 'Rent', amount: 12000, dueDate: '2024-08-01' },
+  { id: 'bill2', name: 'Bike EMI', amount: 3500, dueDate: '2024-08-05' },
+  { id: 'bill3', name: 'Internet', amount: 599, dueDate: '2024-08-10' },
 ];
 
 const savingsGoals = [
   {
     id: 'goal1',
-    name: 'Vacation Fund',
-    current: 1200,
-    goal: 3000,
+    name: 'Goa Trip',
+    current: 12000,
+    goal: 30000,
     progress: 40,
   },
   {
     id: 'goal2',
     name: 'Emergency Fund',
-    current: 4500,
-    goal: 5000,
+    current: 45000,
+    goal: 50000,
     progress: 90,
   },
   {
     id: 'goal3',
-    name: 'New Car',
-    current: 2500,
-    goal: 20000,
-    progress: 12.5,
+    name: 'New Phone',
+    current: 15000,
+    goal: 50000,
+    progress: 30,
   },
 ];
 
@@ -131,7 +131,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>Total Balance</CardDescription>
-            <CardTitle className="text-4xl">$5,329</CardTitle>
+            <CardTitle className="text-4xl">₹45,329</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>This Month's Income</CardDescription>
-            <CardTitle className="text-4xl">$1,890</CardTitle>
+            <CardTitle className="text-4xl">₹25,000</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
@@ -153,7 +153,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>This Month's Expenses</CardDescription>
-            <CardTitle className="text-4xl">$4,800</CardTitle>
+            <CardTitle className="text-4xl">₹32,000</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-xs text-muted-foreground">
@@ -197,11 +197,11 @@ export default function DashboardPage() {
                   fontSize={12}
                   tickLine={false}
                   axisLine={false}
-                  tickFormatter={(value) => `$${value}`}
+                  tickFormatter={(value) => `₹${value / 1000}k`}
                 />
                 <ChartTooltip
                   cursor={{ fill: 'hsl(var(--accent))' }}
-                  content={<ChartTooltipContent />}
+                  content={<ChartTooltipContent formatter={(value, name) => [`₹${(value as number).toLocaleString()}`, name === 'income' ? 'Income' : 'Expenses']}/>}
                 />
                 <Bar
                   dataKey="income"
@@ -230,11 +230,11 @@ export default function DashboardPage() {
                 <div className="grid gap-1">
                   <p className="font-medium leading-none">{bill.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    Due: {bill.dueDate}
+                    Due: {new Date(bill.dueDate).toLocaleDateString('en-IN', { month: 'long', day: 'numeric' })}
                   </p>
                 </div>
                 <div className="ml-auto font-medium">
-                  ${bill.amount.toFixed(2)}
+                  ₹{bill.amount.toLocaleString('en-IN')}
                 </div>
                 <Button size="sm" variant="outline">
                   Pay
@@ -278,7 +278,7 @@ export default function DashboardPage() {
                         {transaction.description}
                       </div>
                       <div className="text-sm text-muted-foreground">
-                        {transaction.date}
+                         {new Date(transaction.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric'})}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -291,8 +291,8 @@ export default function DashboardPage() {
                           : 'text-foreground'
                       }`}
                     >
-                      {transaction.amount > 0 ? '+' : ''}$
-                      {Math.abs(transaction.amount).toFixed(2)}
+                      {transaction.amount > 0 ? '+' : ''}₹
+                      {Math.abs(transaction.amount).toLocaleString('en-IN')}
                     </TableCell>
                   </TableRow>
                 ))}
@@ -313,8 +313,8 @@ export default function DashboardPage() {
                 <div className="flex justify-between font-medium">
                   <span>{goal.name}</span>
                   <span>
-                    ${goal.current.toLocaleString()} / $
-                    {goal.goal.toLocaleString()}
+                    ₹{goal.current.toLocaleString('en-IN')} / ₹
+                    {goal.goal.toLocaleString('en-IN')}
                   </span>
                 </div>
                 <Progress
@@ -329,3 +329,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

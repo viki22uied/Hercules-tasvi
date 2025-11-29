@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,8 +18,9 @@ import {
   predictIncomeDip,
   type PredictIncomeDipOutput,
 } from '@/ai/flows/income-dip-prediction';
-import { Loader2, TrendingDown, TrendingUp, Lightbulb } from 'lucide-react';
+import { Loader2, TrendingDown, TrendingUp, Lightbulb, Mic, Square } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { translateText } from '@/ai/flows/translate-flow';
 
 const formSchema = z.object({
   historicalIncomeData: z
@@ -32,16 +33,67 @@ const formSchema = z.object({
 export function IncomeIntelligenceClient() {
   const [result, setResult] = useState<PredictIncomeDipOutput | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       historicalIncomeData:
-        '{"January": 5000, "February": 4800, "March": 5200, "April": 4500}',
-      workPattern: 'Freelance software developer with project-based income.',
-      economicTrends: 'Tech industry is seeing a slight slowdown in hiring.',
+        '{"January": 40000, "February": 38000, "March": 42000, "April": 35000}',
+      workPattern: 'Delivery partner with variable weekly earnings.',
+      economicTrends: 'Monsoon season often reduces delivery orders in my area.',
     },
   });
+
+  const handleStartRecording = async () => {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        mediaRecorderRef.current = new MediaRecorder(stream);
+        mediaRecorderRef.current.ondataavailable = (event) => {
+          audioChunksRef.current.push(event.data);
+        };
+        mediaRecorderRef.current.onstop = async () => {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          audioChunksRef.current = [];
+          
+          // Here you would typically send the audioBlob to a speech-to-text service.
+          // For this example, we'll simulate a transcription.
+          const simulatedTranscription = 'My income was 40000 in January, 38000 in February, and 42000 in March. I work as a delivery driver and the upcoming monsoon might affect my earnings.';
+          
+          // Translate the text if needed, then update the form.
+          // In a real app, you might parse this text to populate all fields.
+          const { translation } = await translateText({ text: simulatedTranscription, targetLang: 'en' });
+          form.setValue('workPattern', translation);
+          
+          stream.getTracks().forEach(track => track.stop());
+        };
+        audioChunksRef.current = [];
+        mediaRecorderRef.current.start();
+        setIsRecording(true);
+      } catch (err) {
+        console.error('Error accessing microphone:', err);
+        // You could show a toast message to the user here
+      }
+    }
+  };
+
+  const handleStopRecording = () => {
+    if (mediaRecorderRef.current) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.stream) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
@@ -51,7 +103,6 @@ export function IncomeIntelligenceClient() {
       setResult(prediction);
     } catch (error) {
       console.error('Error predicting income dip:', error);
-      // Here you could use a toast to show an error message
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +151,7 @@ export function IncomeIntelligenceClient() {
                 <FormLabel>Historical Income Data (as JSON)</FormLabel>
                 <FormControl>
                   <Textarea
-                    placeholder='e.g., {"January": 5000, "February": 4800}'
+                    placeholder='e.g., {"January": 40000, "February": 38000}'
                     {...field}
                   />
                 </FormControl>
@@ -113,10 +164,10 @@ export function IncomeIntelligenceClient() {
             name="workPattern"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Work Pattern</FormLabel>
+                <FormLabel>Work Pattern & Other Details</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Full-time salaried employee"
+                  <Textarea
+                    placeholder="Describe your work, income patterns, and any factors that might affect it. You can also use the record button."
                     {...field}
                   />
                 </FormControl>
@@ -132,7 +183,7 @@ export function IncomeIntelligenceClient() {
                 <FormLabel>Economic Trends</FormLabel>
                 <FormControl>
                   <Input
-                    placeholder="e.g., Seasonal retail hiring increase"
+                    placeholder="e.g., Rising fuel prices"
                     {...field}
                   />
                 </FormControl>
@@ -140,10 +191,17 @@ export function IncomeIntelligenceClient() {
               </FormItem>
             )}
           />
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Analyze Income
-          </Button>
+          <div className="flex items-center gap-4">
+            <Button type="submit" disabled={isLoading || isRecording}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Analyze Income
+            </Button>
+            <Button type="button" variant="outline" size="icon" onClick={isRecording ? handleStopRecording : handleStartRecording}>
+                {isRecording ? <Square className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+                <span className="sr-only">{isRecording ? 'Stop Recording' : 'Start Recording'}</span>
+            </Button>
+            {isRecording && <span className="text-sm text-muted-foreground animate-pulse">Recording...</span>}
+          </div>
         </form>
       </Form>
 
@@ -168,3 +226,5 @@ export function IncomeIntelligenceClient() {
     </div>
   );
 }
+
+    
