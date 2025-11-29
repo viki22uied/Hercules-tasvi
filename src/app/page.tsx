@@ -1,3 +1,4 @@
+
 'use client';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -7,10 +8,12 @@ import { AppLogo } from '@/components/common/AppLogo';
 import { ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
+import { useAuth } from '@/firebase/auth';
 
 const translations: Record<string, Record<string, string>> = {
   'Hercules Finance AI': { hi: 'हरक्यूलिस फाइनेंस एआई', mr: 'हरक्यूलिस फायनान्स एआय' },
   'Get Started': { hi: 'शुरू करें', mr: 'सुरु करा' },
+  'Dashboard': { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
   'Your Intelligent Financial Companion': { hi: 'आपका बुद्धिमान वित्तीय साथी', mr: 'तुमचा बुद्धिमान आर्थिक साथीदार' },
   'Harness the power of AI to forecast income, manage cash flow, and build a secure financial future with confidence.': { hi: 'आय का पूर्वानुमान लगाने, नकदी प्रवाह का प्रबंधन करने और आत्मविश्वास के साथ एक सुरक्षित वित्तीय भविष्य बनाने के लिए एआई की शक्ति का उपयोग करें।', mr: 'उत्पन्नाचा अंदाज घेण्यासाठी, रोकड प्रवाहाचे व्यवस्थापन करण्यासाठी आणि आत्मविश्वासाने सुरक्षित आर्थिक भविष्य घडवण्यासाठी एआयच्या सामर्थ्याचा वापर करा.' },
   'Take Control of Your Finances': { hi: 'अपने वित्त पर नियंत्रण रखें', mr: 'आपल्या वित्तावर नियंत्रण ठेवा' },
@@ -27,6 +30,7 @@ const translations: Record<string, Record<string, string>> = {
 export default function LandingPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const lang = searchParams.get('lang') || 'en';
 
   const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
@@ -45,6 +49,9 @@ export default function LandingPage() {
     return `${href}?lang=${lang}`;
   }
 
+  const getStartedLink = user ? getHref("/dashboard") : getHref("/signup");
+  const getStartedText = user ? t('Dashboard') : t('Get Started');
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
@@ -55,8 +62,8 @@ export default function LandingPage() {
           </span>
         </Link>
         <Button asChild>
-          <Link href={getHref("/dashboard")}>
-            {t('Get Started')} <ArrowRight className="ml-2" />
+          <Link href={getStartedLink}>
+            {getStartedText} <ArrowRight className="ml-2" />
           </Link>
         </Button>
       </header>
@@ -84,7 +91,7 @@ export default function LandingPage() {
                 </p>
                 <div className="mt-10">
                   <Button size="lg" asChild>
-                    <Link href={getHref("/dashboard")}>
+                    <Link href={getStartedLink}>
                       {t('Take Control of Your Finances')}
                     </Link>
                   </Button>
