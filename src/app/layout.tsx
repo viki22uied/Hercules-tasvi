@@ -3,7 +3,6 @@ import type { Metadata } from 'next';
 import { Roboto } from 'next/font/google';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider } from '@/firebase/auth';
 
 const roboto = Roboto({
   subsets: ['latin'],
@@ -32,10 +31,8 @@ export default function RootLayout({
         />
       </head>
       <body className={`${roboto.variable} font-body antialiased`}>
-        <AuthProvider>
-            {children}
-            <Toaster />
-        </AuthProvider>
+        {children}
+        <Toaster />
       </body>
     </html>
   );

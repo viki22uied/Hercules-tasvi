@@ -3,21 +3,17 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { SidebarTrigger } from '@/components/ui/sidebar';
-import { Globe, LogOut } from 'lucide-react';
+import { Globe, User } from 'lucide-react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useState, useTransition, useEffect, useCallback, useMemo } from 'react';
-import { useAuth } from '@/firebase/auth';
-import { getAuth, signOut } from 'firebase/auth';
+import { useState, useTransition, useEffect, useCallback } from 'react';
 
 const pageTitles: { [key: string]: string } = {
   '/dashboard': 'Dashboard',
@@ -41,12 +37,7 @@ const translations: Record<string, Record<string, string>> = {
     'Stress Sensing': { hi: 'तणाव सेन्सिंग', mr: 'तणाव सेन्सिंग' },
     'Scam Simulation': { hi: 'घोटाळा सिम्युलेशन', mr: 'घोटाळा सिम्युलेशन' },
     'Hercules Finance AI': { hi: 'हरक्यूलिस फायनान्स एआय', mr: 'हरक्यूलिस फायनान्स एआय' },
-    'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
-    'Support': { hi: 'समर्थन', mr: 'समर्थन' },
-    'Hercules AI': { hi: 'हरक्यूलिस एआय', mr: 'हरक्यूलिस एआय'},
-    'My Account': { hi: 'मेरा खाता', mr: 'माझे खाते' },
-    'Logout': { hi: 'लॉग आउट', mr: 'लॉग आउट' },
-  };
+};
 
 const translateTitle = (key: string, lang: string) => {
   if (lang === 'en' || !key) return key;
@@ -58,8 +49,6 @@ export function Header() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
-  const { user } = useAuth();
-  const auth = getAuth();
 
   const getInitialLang = useCallback(() => {
     if (typeof window === 'undefined') return 'en';
@@ -78,11 +67,6 @@ export function Header() {
     const lang = getInitialLang();
     setLanguage(lang);
   }, [pathname, searchParams, getInitialLang]);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-  };
   
   const onSelectLanguage = (lang: string) => {
     if (language === lang) return;
@@ -100,10 +84,6 @@ export function Header() {
   
   const originalTitle = pageTitles[pathname] || 'Hercules Finance AI';
   const title = hydrated ? translateTitle(originalTitle, language) : originalTitle;
-  
-  const userFallback = useMemo(() => {
-    return user?.email?.charAt(0).toUpperCase() || 'U';
-  }, [user]);
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -128,30 +108,10 @@ export function Header() {
             </DropdownMenuRadioGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <Avatar>
-                <AvatarImage src={user?.photoURL || "https://picsum.photos/seed/user/100/100"} />
-                <AvatarFallback>{userFallback}</AvatarFallback>
-              </Avatar>
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>{user?.email || translateTitle('My Account', language)}</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>{translateTitle('Settings', language)}</DropdownMenuItem>
-            <DropdownMenuItem>{translateTitle('Support', language)}</DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4"/>
-                <span>{translateTitle('Logout', language)}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Avatar>
+          <AvatarFallback><User /></AvatarFallback>
+        </Avatar>
       </div>
     </header>
   );
 }
-

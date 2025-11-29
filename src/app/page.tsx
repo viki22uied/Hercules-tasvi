@@ -8,7 +8,6 @@ import { AppLogo } from '@/components/common/AppLogo';
 import { ArrowRight } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useMemo } from 'react';
-import { useAuth } from '@/firebase/auth';
 
 const translations: Record<string, Record<string, string>> = {
   'Hercules Finance AI': { hi: 'हरक्यूलिस फाइनेंस एआई', mr: 'हरक्यूलिस फायनान्स एआय' },
@@ -30,7 +29,6 @@ const translations: Record<string, Record<string, string>> = {
 export default function LandingPage() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero');
   const searchParams = useSearchParams();
-  const { user } = useAuth();
   const lang = searchParams.get('lang') || 'en';
 
   const t = useMemo(() => (key: string, ...args: (string | number)[]) => {
@@ -49,8 +47,8 @@ export default function LandingPage() {
     return `${href}?lang=${lang}`;
   }
 
-  const getStartedLink = user ? getHref("/dashboard") : getHref("/signup");
-  const getStartedText = user ? t('Dashboard') : t('Get Started');
+  const getStartedLink = getHref("/dashboard");
+  const getStartedText = t('Get Started');
 
   return (
     <div className="flex min-h-screen flex-col">
