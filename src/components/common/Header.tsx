@@ -31,13 +31,13 @@ const translations: Record<string, Record<string, string>> = {
     'Dashboard': { hi: 'डैशबोर्ड', mr: 'डॅशबोर्ड' },
     'Income Intelligence': { hi: 'आय बुद्धिमत्ता', mr: 'उत्पन्न बुद्धिमत्ता' },
     'Family Finance': { hi: 'पारिवारिक वित्त', mr: 'कौटुंबिक वित्त' },
-    'Crisis Plan': { hi: 'संकट योजना', mr: 'संकट योजना' },
-    'Cultural Investment': { hi: 'सांस्कृतिक गुंतवणूक', mr: 'सांस्कृतिक गुंतवणूक' },
-    'Stress Sensing': { hi: 'तणाव सेन्सिंग', mr: 'तणाव सेन्सिंग' },
-    'Scam Simulation': { hi: 'घोटाळा सिम्युलेशन', mr: 'घोटाळा सिम्युलेशन' },
     'Personalized Crisis Plan': { hi: 'व्यक्तिगत संकट योजना', mr: 'वैयक्तिक संकट योजना'},
+    'Cultural Investment': { hi: 'सांस्कृतिक गुंतवणूक', mr: 'सांस्कृतिक गुंतवणूक' },
     'Emotional Stress Sensing': { hi: 'भावनिक तणाव सेन्सिंग', mr: 'भावनिक तणाव सेन्सिंग' },
     'Scam & Fraud Simulation': { hi: 'घोटाळा आणि फसवणूक सिम्युलेशन', mr: 'घोटाळा आणि फसवणूक सिम्युलेशन' },
+    'Crisis Plan': { hi: 'संकट योजना', mr: 'संकट योजना' },
+    'Stress Sensing': { hi: 'तणाव सेन्सिंग', mr: 'तणाव सेन्सिंग' },
+    'Scam Simulation': { hi: 'घोटाळा सिम्युलेशन', mr: 'घोटाळा सिम्युलेशन' },
     'Hercules Finance AI': { hi: 'हरक्यूलिस फायनान्स एआय', mr: 'हरक्यूलिस फायनान्स एआय' },
     'Settings': { hi: 'सेटिंग्ज', mr: 'सेटिंग्ज' },
     'Support': { hi: 'समर्थन', mr: 'समर्थन' },
@@ -52,29 +52,28 @@ const translateTitle = (key: string, lang: string) => {
 // Debounce function
 const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) => {
     let timeout: NodeJS.Timeout;
-  
+
     return (...args: Parameters<F>): Promise<ReturnType<F>> =>
       new Promise(resolve => {
         if (timeout) {
           clearTimeout(timeout);
         }
-  
+
         timeout = setTimeout(() => resolve(func(...args)), waitFor);
       });
 };
 
-const debouncedTranslate = debounce(translateText, 500);
+const debouncedTranslate = debounce(translateText, 300);
 
 const translateElements = async (targetLang: string) => {
-    document.querySelectorAll('[data-original-text]').forEach(el => {
-        const originalText = (el as HTMLElement).dataset.originalText;
-        if (originalText) {
-            el.textContent = originalText;
-            (el as HTMLElement).removeAttribute('data-original-text');
-        }
-    });
-
     if (targetLang === 'en') {
+        document.querySelectorAll('[data-original-text]').forEach(el => {
+            const originalText = (el as HTMLElement).dataset.originalText;
+            if (originalText) {
+                el.textContent = originalText;
+                (el as HTMLElement).removeAttribute('data-original-text');
+            }
+        });
         return;
     }
 
@@ -86,8 +85,9 @@ const translateElements = async (targetLang: string) => {
         const hasNoTranslatableChildren = ![...el.children].some(child => child.nodeName.match(/^(P|H[1-6]|SPAN|DIV|LABEL|BUTTON|A)$/));
         const isNotEmpty = el.textContent?.trim();
         const isNotSrOnly = !htmlEl.classList.contains('sr-only');
+        const isNotTranslated = !htmlEl.dataset.originalText;
 
-        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && !htmlEl.dataset.originalText) {
+        if (hasNoTranslatableChildren && isNotEmpty && isNotSrOnly && isNotTranslated) {
             translatableElements.push(htmlEl);
         }
     });
@@ -95,7 +95,7 @@ const translateElements = async (targetLang: string) => {
     for (const el of translatableElements) {
         const originalText = el.textContent || '';
         if (originalText.trim().length > 1 && !originalText.startsWith('₹')) {
-            if(!el.dataset.originalText) el.dataset.originalText = originalText;
+            el.dataset.originalText = originalText;
             try {
                 const staticTranslation = translations[originalText]?.[targetLang];
                 if (staticTranslation) {
@@ -104,13 +104,13 @@ const translateElements = async (targetLang: string) => {
                      }
                 } else {
                     const { translation } = await debouncedTranslate({ text: originalText, targetLang });
-                    if (el.dataset.originalText === originalText) {
+                    if (el.dataset.originalText === originalText) { // Check again in case of race condition
                         el.textContent = translation;
                     }
                 }
             } catch (e) {
                 console.error("Translation failed for:", originalText, e);
-                if(el.dataset.originalText) el.textContent = el.dataset.originalText;
+                if(el.dataset.originalText) el.textContent = el.dataset.originalText; // Revert on failure
             }
         }
     }
@@ -123,9 +123,10 @@ export function Header() {
   const [isPending, startTransition] = useTransition();
 
   const getInitialLang = useCallback(() => {
-    const lang = searchParams.get('lang');
+    if (typeof window === 'undefined') return 'en';
+    const lang = new URLSearchParams(window.location.search).get('lang');
     return lang && ['en', 'hi', 'mr'].includes(lang) ? lang : 'en';
-  }, [searchParams]);
+  }, []);
 
   const [language, setLanguage] = useState(getInitialLang);
 
@@ -135,23 +136,22 @@ export function Header() {
     // Use a timeout to ensure the DOM is fully rendered before translating
     const timer = setTimeout(() => {
          translateElements(lang);
-    }, 100);
+    }, 150); // Increased timeout slightly
     return () => clearTimeout(timer);
   }, [pathname, searchParams, getInitialLang]);
   
   const onSelectLanguage = (lang: string) => {
     if (language === lang) return;
-    setLanguage(lang);
-    const params = new URLSearchParams(window.location.search);
-    if (lang === 'en') {
-        params.delete('lang');
-    } else {
-        params.set('lang', lang);
-    }
-    const newUrl = `${pathname}?${params.toString()}`;
     
     startTransition(() => {
-      router.replace(newUrl, { scroll: false });
+      setLanguage(lang);
+      const params = new URLSearchParams(window.location.search);
+      if (lang === 'en') {
+          params.delete('lang');
+      } else {
+          params.set('lang', lang);
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     });
   };
   
