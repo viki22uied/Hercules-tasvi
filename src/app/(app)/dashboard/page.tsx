@@ -179,10 +179,6 @@ export default function DashboardPage() {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
-    return null;
-  }
-
   const translatedChartConfig = useMemo(() => ({
     income: {
       label: t('Income'),
@@ -193,6 +189,10 @@ export default function DashboardPage() {
       color: 'hsl(var(--muted-foreground))',
     },
   }), [t]);
+
+  if (!mounted) {
+    return null;
+  }
 
   return (
     <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
