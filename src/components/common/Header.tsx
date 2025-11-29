@@ -66,16 +66,15 @@ const debounce = <F extends (...args: any[]) => any>(func: F, waitFor: number) =
 const debouncedTranslate = debounce(translateText, 300);
 
 const translateElements = async (targetLang: string) => {
-    if (targetLang === 'en') {
-        document.querySelectorAll('[data-original-text]').forEach(el => {
-            const originalText = (el as HTMLElement).dataset.originalText;
-            if (originalText) {
-                el.textContent = originalText;
-                (el as HTMLElement).removeAttribute('data-original-text');
-            }
-        });
-        return;
-    }
+    document.querySelectorAll('[data-original-text]').forEach(el => {
+        const originalText = (el as HTMLElement).dataset.originalText;
+        if (originalText) {
+            el.textContent = originalText;
+            (el as HTMLElement).removeAttribute('data-original-text');
+        }
+    });
+
+    if (targetLang === 'en') return;
 
     const elements = document.querySelectorAll('p, h1, h2, h3, h4, span, div, label, button, a, [data-translate]');
     const translatableElements: HTMLElement[] = [];
@@ -129,14 +128,18 @@ export function Header() {
   }, []);
 
   const [language, setLanguage] = useState(getInitialLang);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    setHydrated(true);
+  }, []);
 
   useEffect(() => {
     const lang = getInitialLang();
     setLanguage(lang);
-    // Use a timeout to ensure the DOM is fully rendered before translating
     const timer = setTimeout(() => {
          translateElements(lang);
-    }, 150); // Increased timeout slightly
+    }, 150);
     return () => clearTimeout(timer);
   }, [pathname, searchParams, getInitialLang]);
   
@@ -156,7 +159,7 @@ export function Header() {
   };
   
   const originalTitle = pageTitles[pathname] || 'Hercules Finance AI';
-  const title = translateTitle(originalTitle, language);
+  const title = hydrated ? translateTitle(originalTitle, language) : originalTitle;
 
   return (
     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
@@ -165,7 +168,7 @@ export function Header() {
       <div className="ml-auto flex items-center gap-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" disabled={isPending}>
+            <Button variant="outline" size="icon" disabled={isPending || !hydrated}>
               <Globe className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
