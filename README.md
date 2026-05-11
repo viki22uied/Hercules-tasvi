@@ -39,8 +39,6 @@ The application uses Genkit to connect to Google's AI models, which requires an 
 3.  Add the key to your `.env` file:
 
     ```
-    GEMINI_API_KEY=your_api_key_here
-    ```
 
 ### 2. Install Dependencies
 
